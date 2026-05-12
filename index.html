@@ -772,16 +772,30 @@
 
       finalPrice.textContent = `R$${total}`;
 
-      templateOutput.value =
+     templateOutput.value =
 `Uniform Type: ${uniformSelect.value || "None"}
 
-Badges: ${selected["Badges"].length ? selected["Badges"].join(", ") : "None"}
+Final Price: $${total}
 
-Ribbons: ${selected["Ribbons"].length ? selected["Ribbons"].join(", ") : "None"}
+Badges:
+${selected["Badges"].length
+  ? selected["Badges"].map(item => `• ${item}`).join("\n")
+  : "• None"}
 
-Foreign Devices: ${selected["Foreign Devices"].length ? selected["Foreign Devices"].join(", ") : "None"}
+Ribbons:
+${selected["Ribbons"].length
+  ? selected["Ribbons"].map(item => `• ${item}`).join("\n")
+  : "• None"}
 
-Accessories: ${selected["Accessories"].length ? selected["Accessories"].join(", ") : "None"}`;
+Foreign Devices:
+${selected["Foreign Devices"].length
+  ? selected["Foreign Devices"].map(item => `• ${item}`).join("\n")
+  : "• None"}
+
+Accessories:
+${selected["Accessories"].length
+  ? selected["Accessories"].map(item => `• ${item}`).join("\n")
+  : "• None"}`;
     }
 
 
