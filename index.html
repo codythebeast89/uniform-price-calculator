@@ -215,6 +215,8 @@
     const uniformData = {
 
       "AGSU": {
+        basePrice: 25,
+        
         ribbons: [
           { name: "Army Distinguished Service Cross", price: 3 },
           { name: "Defense Distinguished Service", price: 3 },
@@ -279,6 +281,8 @@
       },
 
       "OCP": {
+        basePrice: 10,
+        
         ribbons: [],
 
         badges: [
@@ -449,7 +453,9 @@
 
       const checked = document.querySelectorAll("input[type='checkbox']:checked");
 
-      let total = 0;
+      const selectedUniform = uniformData[uniformSelect.value];
+
+      let total = selectedUniform?.basePrice || 0;
 
       const selected = {
         "Badges": [],
@@ -464,7 +470,7 @@
         selected[box.dataset.type].push(box.value);
       });
 
-      finalPrice.textContent = `$${total}`;
+      finalPrice.textContent = `R$${total}`;
 
       templateOutput.value =
 `Uniform Type: ${uniformSelect.value || "None"}
