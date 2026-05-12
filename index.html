@@ -23,12 +23,24 @@
       margin-bottom: 40px;
     }
 
-   .container {
+.container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: 320px 1fr;
   gap: 20px;
-
   align-items: start;
+}
+
+    .left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.right-column {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-content: flex-start;
 }
 
     .card {
@@ -121,16 +133,19 @@
 
   <h1>USAR Quartermaster Corps Uniform Price Calculator</h1>
 
-  <div class="container">
+<div class="container">
+
+  <!-- LEFT SIDE -->
+  <div class="left-column">
 
     <!-- FINAL PRICE -->
     <div class="card">
       <h2>Final Price</h2>
 
-      <div class="price" id="finalPrice">R$0</div>
+      <div class="price" id="finalPrice">$0</div>
 
       <div class="price-note">
-        Every selected asset costs R$3.
+        Every selected asset costs $3.
       </div>
     </div>
 
@@ -142,6 +157,29 @@
         <option value="">Select Uniform</option>
       </select>
     </div>
+
+    <!-- ACCESSORIES -->
+    <div class="card hidden" id="accessoriesCard">
+      <h2>Accessories</h2>
+
+      <div class="checkbox-group" id="accessoriesContainer"></div>
+    </div>
+
+    <!-- ORDER TEMPLATE -->
+    <div class="card">
+      <h2>Ordering Template</h2>
+
+      <textarea id="templateOutput" readonly></textarea>
+
+      <button id="copyButton">
+        Copy Template
+      </button>
+    </div>
+
+  </div>
+
+  <!-- RIGHT SIDE -->
+  <div class="right-column">
 
     <!-- RIBBONS -->
     <div class="card hidden" id="ribbonsCard">
@@ -164,25 +202,9 @@
       <div class="checkbox-group" id="foreignContainer"></div>
     </div>
 
-    <!-- ACCESSORIES -->
-    <div class="card hidden" id="accessoriesCard">
-      <h2>Accessories</h2>
-
-      <div class="checkbox-group" id="accessoriesContainer"></div>
-    </div>
-
-    <!-- ORDER TEMPLATE -->
-    <div class="card">
-      <h2>Ordering Template</h2>
-
-      <textarea id="templateOutput" readonly></textarea>
-
-      <button id="copyButton">
-        Copy Template
-      </button>
-    </div>
-
   </div>
+
+</div>
 
   <script>
 
