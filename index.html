@@ -673,7 +673,7 @@
     label.appendChild(checkbox);
 
     label.appendChild(
-      document.createTextNode(`${itemName} ($${itemPrice})`)
+      document.createTextNode(`${itemName} (R$${itemPrice})`)
     );
 
     container.appendChild(label);
@@ -773,15 +773,15 @@
       finalPrice.textContent = `R$${total}`;
 
       templateOutput.value =
-`Uniform Type: R${uniformSelect.value || "None"}
+`Uniform Type: ${uniformSelect.value || "None"}
 
-Badges: R${selected["Badges"].length ? selected["Badges"].join(", ") : "None"}
+Badges: ${selected["Badges"].length ? selected["Badges"].join(", ") : "None"}
 
-Ribbons: R${selected["Ribbons"].length ? selected["Ribbons"].join(", ") : "None"}
+Ribbons: ${selected["Ribbons"].length ? selected["Ribbons"].join(", ") : "None"}
 
-Foreign Devices: R${selected["Foreign Devices"].length ? selected["Foreign Devices"].join(", ") : "None"}
+Foreign Devices: ${selected["Foreign Devices"].length ? selected["Foreign Devices"].join(", ") : "None"}
 
-Accessories: R${selected["Accessories"].length ? selected["Accessories"].join(", ") : "None"}`;
+Accessories: ${selected["Accessories"].length ? selected["Accessories"].join(", ") : "None"}`;
     }
 
 
