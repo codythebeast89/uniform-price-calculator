@@ -210,32 +210,30 @@
     =====================================================
     */
 
-    const PRICE_PER_ITEM = 3;
+    const DEFAULT_PRICE = 3;
 
     const uniformData = {
 
       "AGSU": {
         ribbons: [
-          "Ribbon Option 1",
-          "Ribbon Option 2",
-          "Ribbon Option 3"
-        ],
+  { name: "Ribbon Option 1", price: 3 },
+  { name: "Ribbon Option 2", price: 5 }
+],
 
         badges: [
-          "Badge Option 1",
-          "Badge Option 2"
+  { name: "Badge Option 1", price: 3 },
+  { name: "Badge Option 2", price: 5 }
         ],
 
         foreignDevices: [
-          "Foreign Device 1",
-          "Foreign Device 2"
+  { name: "Foreign Device Option 1", price: 3 },
+  { name: "Foreign Device Option 2", price: 5 }
         ],
 
         accessories: [
-          "Watch",
-          "1 Tattoo",
-          "2 Tattoos"
-        ]
+  { name: "Watch", price: 15 },
+  { name: "Tattoo", price: 8 }
+]
       },
 
       "OCP": {
@@ -301,24 +299,42 @@
 
     // Create checkbox list
     function createCheckboxes(container, items, type) {
-      container.innerHTML = "";
 
-      items.forEach(item => {
-        const label = document.createElement("label");
+  container.innerHTML = "";
 
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.value = item;
-        checkbox.dataset.type = type;
+  items.forEach(item => {
 
-        checkbox.addEventListener("change", updateCalculator);
+    // Supports BOTH strings and custom price objects
+    const itemName = typeof item === "string"
+      ? item
+      : item.name;
 
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(item));
+    const itemPrice = typeof item === "string"
+      ? DEFAULT_PRICE
+      : item.price;
 
-        container.appendChild(label);
-      });
-    }
+    const label = document.createElement("label");
+
+    const checkbox = document.createElement("input");
+
+    checkbox.type = "checkbox";
+    checkbox.value = itemName;
+    checkbox.dataset.type = type;
+    checkbox.dataset.price = itemPrice;
+
+    checkbox.addEventListener("change", updateCalculator);
+
+    label.appendChild(checkbox);
+
+    label.appendChild(
+      document.createTextNode(`${itemName} ($${itemPrice})`)
+    );
+
+    container.appendChild(label);
+
+  });
+
+}
 
 
     // Show/hide categories based on selected uniform
@@ -401,7 +417,7 @@
       };
 
       checked.forEach(box => {
-        total += PRICE_PER_ITEM;
+        total += Number(box.dataset.price);
 
         selected[box.dataset.type].push(box.value);
       });
