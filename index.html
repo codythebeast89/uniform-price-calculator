@@ -1,0 +1,442 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>USAR Quartermaster Corps Price Calculator</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 40px;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    .price {
+      font-size: 42px;
+      font-weight: bold;
+      color: #2563eb;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 16px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 220px;
+      resize: none;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .price-note {
+      font-size: 14px;
+      color: #6b7280;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>USAR Quartermaster Corps Price Calculator</h1>
+
+  <div class="container">
+
+    <!-- FINAL PRICE -->
+    <div class="card">
+      <h2>Final Price</h2>
+
+      <div class="price" id="finalPrice">$0</div>
+
+      <div class="price-note">
+        Every selected asset costs $3.
+      </div>
+    </div>
+
+    <!-- UNIFORM TYPE -->
+    <div class="card">
+      <h2>Uniform Type</h2>
+
+      <select id="uniformSelect">
+        <option value="">Select Uniform</option>
+      </select>
+    </div>
+
+    <!-- RIBBONS -->
+    <div class="card hidden" id="ribbonsCard">
+      <h2>Ribbons</h2>
+
+      <div class="checkbox-group" id="ribbonsContainer"></div>
+    </div>
+
+    <!-- BADGES -->
+    <div class="card hidden" id="badgesCard">
+      <h2>Badges</h2>
+
+      <div class="checkbox-group" id="badgesContainer"></div>
+    </div>
+
+    <!-- FOREIGN DEVICES -->
+    <div class="card hidden" id="foreignCard">
+      <h2>Foreign Devices</h2>
+
+      <div class="checkbox-group" id="foreignContainer"></div>
+    </div>
+
+    <!-- ACCESSORIES -->
+    <div class="card hidden" id="accessoriesCard">
+      <h2>Accessories</h2>
+
+      <div class="checkbox-group" id="accessoriesContainer"></div>
+    </div>
+
+    <!-- ORDER TEMPLATE -->
+    <div class="card">
+      <h2>Ordering Template</h2>
+
+      <textarea id="templateOutput" readonly></textarea>
+
+      <button id="copyButton">
+        Copy Template
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+
+    /*
+    =====================================================
+    EASY CUSTOMIZATION SECTION
+    =====================================================
+
+    HOW THIS WORKS:
+
+    - Each uniform can have different categories.
+    - If a category is empty, it stays hidden.
+    - Every checkbox costs 3.
+
+    TO ADD MORE ITEMS:
+
+    Just add more text inside the arrays.
+
+    Example:
+
+    ribbons: [
+      "Air Assault",
+      "Combat Action",
+      "New Ribbon"
+    ]
+
+    =====================================================
+    */
+
+    const PRICE_PER_ITEM = 3;
+
+    const uniformData = {
+
+      "AGSU": {
+        ribbons: [
+          "Ribbon Option 1",
+          "Ribbon Option 2",
+          "Ribbon Option 3"
+        ],
+
+        badges: [
+          "Badge Option 1",
+          "Badge Option 2"
+        ],
+
+        foreignDevices: [
+          "Foreign Device 1",
+          "Foreign Device 2"
+        ],
+
+        accessories: [
+          "Watch",
+          "1 Tattoo",
+          "2 Tattoos"
+        ]
+      },
+
+      "OCP": {
+        ribbons: [],
+
+        badges: [
+          "Combat Badge",
+          "Medic Badge"
+        ],
+
+        foreignDevices: [],
+
+        accessories: [
+          "Watch"
+        ]
+      },
+
+      "Class C": {
+        ribbons: [
+          "Service Ribbon"
+        ],
+
+        badges: [],
+
+        foreignDevices: [],
+
+        accessories: []
+      },
+
+      "Class B": {
+        ribbons: [],
+        badges: [],
+        foreignDevices: [],
+        accessories: []
+      }
+
+    };
+
+    const uniformSelect = document.getElementById("uniformSelect");
+    const finalPrice = document.getElementById("finalPrice");
+    const templateOutput = document.getElementById("templateOutput");
+    const copyButton = document.getElementById("copyButton");
+
+    const ribbonsCard = document.getElementById("ribbonsCard");
+    const badgesCard = document.getElementById("badgesCard");
+    const foreignCard = document.getElementById("foreignCard");
+    const accessoriesCard = document.getElementById("accessoriesCard");
+
+    const ribbonsContainer = document.getElementById("ribbonsContainer");
+    const badgesContainer = document.getElementById("badgesContainer");
+    const foreignContainer = document.getElementById("foreignContainer");
+    const accessoriesContainer = document.getElementById("accessoriesContainer");
+
+
+    // Populate uniform dropdown
+    Object.keys(uniformData).forEach(uniform => {
+      const option = document.createElement("option");
+      option.value = uniform;
+      option.textContent = uniform;
+      uniformSelect.appendChild(option);
+    });
+
+
+    // Create checkbox list
+    function createCheckboxes(container, items, type) {
+      container.innerHTML = "";
+
+      items.forEach(item => {
+        const label = document.createElement("label");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = item;
+        checkbox.dataset.type = type;
+
+        checkbox.addEventListener("change", updateCalculator);
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(item));
+
+        container.appendChild(label);
+      });
+    }
+
+
+    // Show/hide categories based on selected uniform
+    uniformSelect.addEventListener("change", () => {
+
+      const selectedUniform = uniformData[uniformSelect.value];
+
+      // Reset all cards
+      ribbonsCard.classList.add("hidden");
+      badgesCard.classList.add("hidden");
+      foreignCard.classList.add("hidden");
+      accessoriesCard.classList.add("hidden");
+
+      ribbonsContainer.innerHTML = "";
+      badgesContainer.innerHTML = "";
+      foreignContainer.innerHTML = "";
+      accessoriesContainer.innerHTML = "";
+
+      if (!selectedUniform) {
+        updateCalculator();
+        return;
+      }
+
+      // Ribbons
+      if (selectedUniform.ribbons.length > 0) {
+        ribbonsCard.classList.remove("hidden");
+        createCheckboxes(
+          ribbonsContainer,
+          selectedUniform.ribbons,
+          "Ribbons"
+        );
+      }
+
+      // Badges
+      if (selectedUniform.badges.length > 0) {
+        badgesCard.classList.remove("hidden");
+        createCheckboxes(
+          badgesContainer,
+          selectedUniform.badges,
+          "Badges"
+        );
+      }
+
+      // Foreign Devices
+      if (selectedUniform.foreignDevices.length > 0) {
+        foreignCard.classList.remove("hidden");
+        createCheckboxes(
+          foreignContainer,
+          selectedUniform.foreignDevices,
+          "Foreign Devices"
+        );
+      }
+
+      // Accessories
+      if (selectedUniform.accessories.length > 0) {
+        accessoriesCard.classList.remove("hidden");
+        createCheckboxes(
+          accessoriesContainer,
+          selectedUniform.accessories,
+          "Accessories"
+        );
+      }
+
+      updateCalculator();
+    });
+
+
+    // Main calculator
+    function updateCalculator() {
+
+      const checked = document.querySelectorAll("input[type='checkbox']:checked");
+
+      let total = 0;
+
+      const selected = {
+        "Badges": [],
+        "Ribbons": [],
+        "Foreign Devices": [],
+        "Accessories": []
+      };
+
+      checked.forEach(box => {
+        total += PRICE_PER_ITEM;
+
+        selected[box.dataset.type].push(box.value);
+      });
+
+      finalPrice.textContent = `$${total}`;
+
+      templateOutput.value =
+`Uniform Type: ${uniformSelect.value || "None"}
+
+Badges: ${selected["Badges"].length ? selected["Badges"].join(", ") : "None"}
+
+Ribbons: ${selected["Ribbons"].length ? selected["Ribbons"].join(", ") : "None"}
+
+Foreign Devices: ${selected["Foreign Devices"].length ? selected["Foreign Devices"].join(", ") : "None"}
+
+Accessories: ${selected["Accessories"].length ? selected["Accessories"].join(", ") : "None"}`;
+    }
+
+
+    updateCalculator();
+
+
+    // Copy ordering template
+    copyButton.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(templateOutput.value);
+
+        copyButton.textContent = "Copied!";
+
+        setTimeout(() => {
+          copyButton.textContent = "Copy Template";
+        }, 1500);
+
+      } catch (err) {
+        alert("Failed to copy template.");
+      }
+    });
+
+  </script>
+
+</body>
+</html>
+```
