@@ -38,7 +38,7 @@
 
 .right-column {
   display: grid;
-  grid-template-columns: repeat(3, minmax(250px, 1fr));
+  grid-template-columns: repeat(2, minmax(250px, 1fr));
   gap: 20px;
   align-items: start;
 }
@@ -150,6 +150,10 @@
         <a href="https://docs.google.com/document/d/1fc9gU7zDWnZu_3xoFPyP9NUH3D0jb9kDJG7SaAFitOM/edit" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">Uniform Guide</a>
         ·
         <a href="https://docs.google.com/document/d/1iTcTwtrTwjLhMUDras1Tq0NrxOIfmS4MADYSxnxG1Gg/edit" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">Awards &amp; Decorations</a>
+        ·
+        <a href="https://trello.com/b/o1GnoMon/quartermaster-corps-badge-information" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">Badge Information</a>
+        ·
+        <a href="https://docs.google.com/spreadsheets/d/1e_AqHIGrGdfNSgoHt6kLV89E6LADJmlZzhfRAUXo0wY/edit" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">QMC Database</a>
       </div>
     </div>
 
@@ -199,11 +203,18 @@
       <div class="checkbox-group" id="badgesContainer"></div>
     </div>
 
-    <!-- FOREIGN DEVICES -->
-    <div class="card hidden" id="foreignCard">
+    <!-- FOREIGN RIBBONS -->
+    <div class="card hidden" id="foreignRibbonsCard">
       <h2>Foreign Ribbons</h2>
 
-      <div class="checkbox-group" id="foreignContainer"></div>
+      <div class="checkbox-group" id="foreignRibbonsContainer"></div>
+    </div>
+
+    <!-- FOREIGN BADGES -->
+    <div class="card hidden" id="foreignBadgesCard">
+      <h2>Foreign Badges</h2>
+
+      <div class="checkbox-group" id="foreignBadgesContainer"></div>
     </div>
 
   </div>
@@ -285,6 +296,21 @@
       item("Combat Readiness Medal"),
     ];
 
+    const FOREIGN_BADGES = [
+      item("Chief's Fifty Marksmanship Badge"),
+      item("Air Battle Manager Badge"),
+      item("Marine Special Operations Badge"),
+      item("Marine Combat Aircrew Badge"),
+      item("Republic of Korea Jump Wings"),
+      item("Royal Air Force Parachute Wings"),
+      item("Special Air Service Parachute Wings"),
+      item("Royal Air Force Aviator Wings"),
+      item("Armed Forces of the Philippines Airborne Badge"),
+    ];
+
+    const ROK_JUMP_WINGS = item("Republic of Korea Jump Wings");
+    const PRESIDENTS_HUNDRED_TAB = item("President's Hundred Tab");
+
     const SKILL_BADGES = [
       item("Combat Infantryman Badge"),
       item("Combat Medical Badge"),
@@ -322,8 +348,10 @@
     ];
 
     const DRESS_ID_BADGES = [
-      item("Army Staff Identification Badge"),
-      item("Joint Chiefs of Staff Identification Badge"),
+      item("Military Police Identification Badge"),
+      item("Criminal Investigation Division Identification Badge"),
+      item("U.S. Army Staff Identification Badge"),
+      item("Office of the Joint Chiefs of Staff Identification Badge"),
     ];
 
     const CSIB = item("Combat Service Identification Badge");
@@ -372,7 +400,8 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: OCP_COMBAT_BADGES,
-        foreignDevices: FOREIGN_RIBBONS,
+        foreignRibbons: [],
+        foreignBadges: FOREIGN_BADGES,
         accessories: [],
       },
 
@@ -380,7 +409,8 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: OCP_COMBAT_BADGES,
-        foreignDevices: FOREIGN_RIBBONS,
+        foreignRibbons: [],
+        foreignBadges: FOREIGN_BADGES,
         accessories: [
           item("Watch"),
         ],
@@ -390,7 +420,8 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: OCP_STYLE_TABS_CSIB,
-        foreignDevices: [],
+        foreignRibbons: [],
+        foreignBadges: [],
         accessories: [],
       },
 
@@ -398,7 +429,8 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: OCP_STYLE_TABS_CSIB,
-        foreignDevices: [],
+        foreignRibbons: [],
+        foreignBadges: [],
         accessories: [
           item("Watch"),
         ],
@@ -408,7 +440,8 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: OCP_STYLE_TABS_CSIB,
-        foreignDevices: [],
+        foreignRibbons: [],
+        foreignBadges: [],
         accessories: [],
       },
 
@@ -416,7 +449,8 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: [],
-        foreignDevices: [],
+        foreignRibbons: [],
+        foreignBadges: [],
         accessories: [
           item("Ranktab"),
           item("Nametape"),
@@ -430,7 +464,8 @@
           ...SKILL_BADGES,
           ...SKILL_TABS,
         ],
-        foreignDevices: [],
+        foreignRibbons: [],
+        foreignBadges: [],
         accessories: [],
       },
 
@@ -444,8 +479,10 @@
           ...DRESS_ID_BADGES,
           SERVICE_STRIPE,
           OVERSEAS_BAR,
+          PRESIDENTS_HUNDRED_TAB,
         ],
-        foreignDevices: FOREIGN_RIBBONS,
+        foreignRibbons: FOREIGN_RIBBONS,
+        foreignBadges: [ROK_JUMP_WINGS],
         accessories: AGSU_ACCESSORIES,
       },
 
@@ -456,7 +493,8 @@
           ...SKILL_TABS,
           ...SKILL_BADGES,
         ],
-        foreignDevices: [],
+        foreignRibbons: [],
+        foreignBadges: [],
         accessories: [
           item("Watch"),
           item("Regimental Distinctive Insignia"),
@@ -470,7 +508,8 @@
           ...SKILL_TABS,
           ...SKILL_BADGES,
         ],
-        foreignDevices: [],
+        foreignRibbons: [],
+        foreignBadges: [],
         accessories: [
           item("Regimental Distinctive Insignia"),
         ],
@@ -480,7 +519,8 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: [],
-        foreignDevices: [],
+        foreignRibbons: [],
+        foreignBadges: [],
         accessories: [
           item("Nametape"),
           item("Shoulderloop Ranktabs"),
@@ -495,8 +535,10 @@
           ...SKILL_TABS,
           CSIB,
           ...DRESS_ID_BADGES,
+          PRESIDENTS_HUNDRED_TAB,
         ],
-        foreignDevices: [],
+        foreignRibbons: [],
+        foreignBadges: [],
         accessories: CLASS_C_ACCESSORIES,
       },
 
@@ -504,7 +546,8 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: [],
-        foreignDevices: [],
+        foreignRibbons: [],
+        foreignBadges: [],
         accessories: [
           item("Nametape"),
           item("Ranktab"),
@@ -515,7 +558,8 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: AVIATION_BADGES,
-        foreignDevices: [],
+        foreignRibbons: [],
+        foreignBadges: [],
         accessories: [
           item("Nametape"),
           item("Ranktab"),
@@ -531,12 +575,14 @@
 
     const ribbonsCard = document.getElementById("ribbonsCard");
     const badgesCard = document.getElementById("badgesCard");
-    const foreignCard = document.getElementById("foreignCard");
+    const foreignRibbonsCard = document.getElementById("foreignRibbonsCard");
+    const foreignBadgesCard = document.getElementById("foreignBadgesCard");
     const accessoriesCard = document.getElementById("accessoriesCard");
 
     const ribbonsContainer = document.getElementById("ribbonsContainer");
     const badgesContainer = document.getElementById("badgesContainer");
-    const foreignContainer = document.getElementById("foreignContainer");
+    const foreignRibbonsContainer = document.getElementById("foreignRibbonsContainer");
+    const foreignBadgesContainer = document.getElementById("foreignBadgesContainer");
     const accessoriesContainer = document.getElementById("accessoriesContainer");
 
 
@@ -597,12 +643,14 @@
       // Reset all cards
       ribbonsCard.classList.add("hidden");
       badgesCard.classList.add("hidden");
-      foreignCard.classList.add("hidden");
+      foreignRibbonsCard.classList.add("hidden");
+      foreignBadgesCard.classList.add("hidden");
       accessoriesCard.classList.add("hidden");
 
       ribbonsContainer.innerHTML = "";
       badgesContainer.innerHTML = "";
-      foreignContainer.innerHTML = "";
+      foreignRibbonsContainer.innerHTML = "";
+      foreignBadgesContainer.innerHTML = "";
       accessoriesContainer.innerHTML = "";
 
       if (!selectedUniform) {
@@ -630,13 +678,23 @@
         );
       }
 
-      // Foreign Devices
-      if (selectedUniform.foreignDevices.length > 0) {
-        foreignCard.classList.remove("hidden");
+      // Foreign Ribbons
+      if (selectedUniform.foreignRibbons.length > 0) {
+        foreignRibbonsCard.classList.remove("hidden");
         createCheckboxes(
-          foreignContainer,
-          selectedUniform.foreignDevices,
-          "Foreign Devices"
+          foreignRibbonsContainer,
+          selectedUniform.foreignRibbons,
+          "Foreign Ribbons"
+        );
+      }
+
+      // Foreign Badges
+      if (selectedUniform.foreignBadges.length > 0) {
+        foreignBadgesCard.classList.remove("hidden");
+        createCheckboxes(
+          foreignBadgesContainer,
+          selectedUniform.foreignBadges,
+          "Foreign Badges"
         );
       }
 
@@ -666,7 +724,8 @@
       const selected = {
         "Badges": [],
         "Ribbons": [],
-        "Foreign Devices": [],
+        "Foreign Ribbons": [],
+        "Foreign Badges": [],
         "Accessories": []
       };
 
@@ -694,8 +753,13 @@ ${selected["Ribbons"].length
   : "• None"}
 
 Foreign Ribbons:
-${selected["Foreign Devices"].length
-  ? selected["Foreign Devices"].map(item => `• ${item}`).join("\n")
+${selected["Foreign Ribbons"].length
+  ? selected["Foreign Ribbons"].map(item => `• ${item}`).join("\n")
+  : "• None"}
+
+Foreign Badges:
+${selected["Foreign Badges"].length
+  ? selected["Foreign Badges"].map(item => `• ${item}`).join("\n")
   : "• None"}
 
 Accessories:
