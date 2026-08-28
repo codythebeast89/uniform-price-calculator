@@ -10,4 +10,4 @@ Item lists follow the [QMC Uniform Guide](https://docs.google.com/document/d/1fc
 
 ## Updating prices
 
-Edit the `uniformData` object in `index.html`. Each uniform has a `basePrice`, plus optional `ribbons`, `badges`, `foreignDevices`, and `accessories` arrays with per-item `price` values.
+Edit the `uniformData` object in `index.html`. Each uniform has a `basePrice`, plus optional `ribbons`, `badges`, `foreignRibbons`, `foreignBadges`, and `accessories` arrays with per-item `price` values.
