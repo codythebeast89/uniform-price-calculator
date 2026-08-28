@@ -127,9 +127,59 @@
       color: #9ca3af;
       margin-top: 10px;
     }
+
+    .disclaimer-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(15, 23, 42, 0.96);
+    }
+
+    .disclaimer-card {
+      width: 100%;
+      max-width: 520px;
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      text-align: center;
+    }
+
+    .disclaimer-card h2 {
+      margin: 0 0 16px;
+      font-size: 22px;
+      color: #f8fafc;
+    }
+
+    .disclaimer-card p {
+      margin: 0 0 28px;
+      font-size: 17px;
+      line-height: 1.6;
+      color: #d1d5db;
+    }
+
+    .disclaimer-card button {
+      max-width: 280px;
+      margin: 0 auto;
+    }
   </style>
 </head>
 <body>
+
+  <div class="disclaimer-overlay" id="disclaimerOverlay">
+    <div class="disclaimer-card">
+      <h2>Disclaimer</h2>
+      <p>This website is for the 9 year olds who are incapable of doing simple addition and multiplication.</p>
+      <button type="button" id="disclaimerAccept">Continue to Calculator</button>
+    </div>
+  </div>
+
+  <div id="appContent" class="hidden">
 
   <h1>USAR Quartermaster Corps Uniform Price Calculator</h1>
 
@@ -221,7 +271,26 @@
 
 </div>
 
+  </div>
+
   <script>
+
+    const DISCLAIMER_KEY = "qmc-calculator-disclaimer-accepted";
+    const disclaimerOverlay = document.getElementById("disclaimerOverlay");
+    const appContent = document.getElementById("appContent");
+    const disclaimerAccept = document.getElementById("disclaimerAccept");
+
+    function showCalculator() {
+      disclaimerOverlay.classList.add("hidden");
+      appContent.classList.remove("hidden");
+      sessionStorage.setItem(DISCLAIMER_KEY, "true");
+    }
+
+    if (sessionStorage.getItem(DISCLAIMER_KEY) === "true") {
+      showCalculator();
+    }
+
+    disclaimerAccept.addEventListener("click", showCalculator);
 
     /*
     =====================================================
