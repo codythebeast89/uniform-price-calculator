@@ -359,7 +359,90 @@
       item("Unit Citation"),
     ];
 
+    const OCP_STYLE_TABS_CSIB = [
+      ...SKILL_TABS,
+      CSIB,
+    ];
+
+    const OCP_COMBAT_BADGES = [
+      ...SKILL_BADGES,
+      ...SKILL_TABS,
+      CSIB,
+      ...OCP_ID_BADGES,
+    ];
+
+    const AVIATION_BADGES = [
+      item("Aviator Badge"),
+      item("Aviation Badge"),
+    ];
+
     const uniformData = {
+
+      "OCP": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: OCP_COMBAT_BADGES,
+        foreignDevices: FOREIGN_AWARDS_OCP,
+        accessories: [],
+      },
+
+      "Rolled OCP": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: OCP_COMBAT_BADGES,
+        foreignDevices: FOREIGN_AWARDS_OCP,
+        accessories: [
+          item("Watch"),
+        ],
+      },
+
+      "ACS": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: OCP_STYLE_TABS_CSIB,
+        foreignDevices: [],
+        accessories: [],
+      },
+
+      "Rolled ACS": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: OCP_STYLE_TABS_CSIB,
+        foreignDevices: [],
+        accessories: [
+          item("Watch"),
+        ],
+      },
+
+      "Blackouts": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: OCP_STYLE_TABS_CSIB,
+        foreignDevices: [],
+        accessories: [],
+      },
+
+      "Fleeces (Winter)": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: [],
+        foreignDevices: [],
+        accessories: [
+          item("Ranktab"),
+          item("Nametape"),
+        ],
+      },
+
+      "Tigerstripes": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: [
+          ...SKILL_BADGES,
+          ...SKILL_TABS,
+        ],
+        foreignDevices: [],
+        accessories: [],
+      },
 
       "AGSU (Class A)": {
         basePrice: BASE_UNIFORM_PRICE,
@@ -378,43 +461,29 @@
         accessories: AGSU_ACCESSORIES,
       },
 
-      "OCP": {
+      "Class B": {
         basePrice: BASE_UNIFORM_PRICE,
-        ribbons: [],
+        ribbons: RIBBONS,
         badges: [
-          ...SKILL_BADGES,
           ...SKILL_TABS,
-          CSIB,
-          ...OCP_ID_BADGES,
-        ],
-        foreignDevices: FOREIGN_AWARDS_OCP,
-        accessories: [],
-      },
-
-      "Rolled OCP": {
-        basePrice: BASE_UNIFORM_PRICE,
-        ribbons: [],
-        badges: [
           ...SKILL_BADGES,
-          ...SKILL_TABS,
-          CSIB,
-          ...OCP_ID_BADGES,
-        ],
-        foreignDevices: FOREIGN_AWARDS_OCP,
-        accessories: [
-          item("Watch"),
-        ],
-      },
-
-      "Tigerstripes": {
-        basePrice: BASE_UNIFORM_PRICE,
-        ribbons: [],
-        badges: [
-          ...SKILL_BADGES,
-          ...SKILL_TABS,
         ],
         foreignDevices: [],
-        accessories: [],
+        accessories: [
+          item("Watch"),
+          item("Regimental Distinctive Insignia"),
+        ],
+      },
+
+      "Class B Sweater (Winter)": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: [],
+        foreignDevices: [],
+        accessories: [
+          item("Nametape"),
+          item("Shoulderloop Ranktabs"),
+        ],
       },
 
       "Class C": {
@@ -430,17 +499,35 @@
         accessories: CLASS_C_ACCESSORIES,
       },
 
-      "Class B": {
+      "Tanker ICVC": {
         basePrice: BASE_UNIFORM_PRICE,
-        ribbons: RIBBONS,
-        badges: [
-          ...SKILL_TABS,
-          ...SKILL_BADGES,
-        ],
+        ribbons: [],
+        badges: [],
         foreignDevices: [],
         accessories: [
-          item("Watch"),
-          item("Regimental Distinctive Insignia"),
+          item("Nametape"),
+          item("Ranktab"),
+        ],
+      },
+
+      "Pilot ICVC": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: AVIATION_BADGES,
+        foreignDevices: [],
+        accessories: [
+          item("Nametape"),
+          item("Ranktab"),
+        ],
+      },
+
+      "Greenouts (SRT)": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: [CSIB],
+        foreignDevices: [],
+        accessories: [
+          item("Nametape"),
         ],
       },
 
