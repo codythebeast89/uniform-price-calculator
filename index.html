@@ -147,7 +147,9 @@
       <div class="price-note">
         Base uniform: $150. Most ribbons, badges, and add-ons: $3 each.
         <br />
-        <a href="https://docs.google.com/document/d/1fc9gU7zDWnZu_3xoFPyP9NUH3D0jb9kDJG7SaAFitOM/edit" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">QMC Uniform Guide</a>
+        <a href="https://docs.google.com/document/d/1fc9gU7zDWnZu_3xoFPyP9NUH3D0jb9kDJG7SaAFitOM/edit" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">Uniform Guide</a>
+        ·
+        <a href="https://docs.google.com/document/d/1iTcTwtrTwjLhMUDras1Tq0NrxOIfmS4MADYSxnxG1Gg/edit" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">Awards &amp; Decorations</a>
       </div>
     </div>
 
@@ -199,7 +201,7 @@
 
     <!-- FOREIGN DEVICES -->
     <div class="card hidden" id="foreignCard">
-      <h2>Foreign Devices</h2>
+      <h2>Foreign Ribbons</h2>
 
       <div class="checkbox-group" id="foreignContainer"></div>
     </div>
@@ -258,32 +260,29 @@
       item("Army Commendation"),
       item("Joint Service Achievement"),
       item("Army Achievement"),
-      item("Public Service Commendation Medal"),
-      item("Wargames Medal"),
       item("Army Good Conduct"),
-      item("Army of Occupation Medal"),
-      item("Outstanding Volunteer"),
       item("National Defense Service", 0),
-      item("Global War on Terrorism Service", 0),
-      item("NCO Professional Development"),
-      item("Army Service", 0),
-      item("Military Justice"),
-      item("Army Recruiting Ribbon"),
-      item("United Nations Medal"),
-      item("Antarctica Service"),
-      item("Armed Forces Expeditionary Medal"),
-      item("Southwest Asia Service"),
       item("Kosovo Campaign"),
       item("Kuwait Liberation Medal"),
       item("Afghanistan Campaign"),
       item("Iraq Campaign"),
-      item("Joint Special Operations Campaign"),
-      item("Global War on Terrorism Expeditionary"),
-      item("Armed Forces Service Medal"),
       item("Army Sea Duty"),
-      item("Army Overseas Service"),
+      item("Antarctica Service"),
+      item("Armed Forces Expeditionary Medal"),
+      item("Outstanding Volunteer"),
       item("NATO Non-Article 5"),
       item("NATO Article 5"),
+      item("NCO Professional Development"),
+      item("Global War on Terrorism Expeditionary", 0),
+      item("Global War on Terrorism Service", 0),
+      item("Army Service", 0),
+      item("Army Overseas Service"),
+    ];
+
+    const FOREIGN_RIBBONS = [
+      item("Queens Dedication Medal"),
+      item("Turkish Marksmanship Medal"),
+      item("Combat Readiness Medal"),
     ];
 
     const SKILL_BADGES = [
@@ -331,15 +330,6 @@
     const SERVICE_STRIPE = item("Service Stripe");
     const OVERSEAS_BAR = item("Overseas Bar");
 
-    const FOREIGN_AWARDS_OCP = [
-      item("Marine Special Operations Badge"),
-      item("Marine Corps Combat Aircrew Badge"),
-      item("Republic of Korea Jump Wings"),
-      item("Royal Air Force Parachute Wings"),
-      item("Royal Air Force Aviator Wings"),
-      item("Armed Forces of the Philippines Airborne Badge"),
-    ];
-
     const AGSU_ACCESSORIES = [
       item("Ribbon Offset"),
       item("RDI Offset"),
@@ -382,7 +372,7 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: OCP_COMBAT_BADGES,
-        foreignDevices: FOREIGN_AWARDS_OCP,
+        foreignDevices: FOREIGN_RIBBONS,
         accessories: [],
       },
 
@@ -390,7 +380,7 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: OCP_COMBAT_BADGES,
-        foreignDevices: FOREIGN_AWARDS_OCP,
+        foreignDevices: FOREIGN_RIBBONS,
         accessories: [
           item("Watch"),
         ],
@@ -455,9 +445,7 @@
           SERVICE_STRIPE,
           OVERSEAS_BAR,
         ],
-        foreignDevices: [
-          item("Republic of Korea Jump Wings"),
-        ],
+        foreignDevices: FOREIGN_RIBBONS,
         accessories: AGSU_ACCESSORIES,
       },
 
@@ -705,7 +693,7 @@ ${selected["Ribbons"].length
   ? selected["Ribbons"].map(item => `• ${item}`).join("\n")
   : "• None"}
 
-Foreign Devices:
+Foreign Ribbons:
 ${selected["Foreign Devices"].length
   ? selected["Foreign Devices"].map(item => `• ${item}`).join("\n")
   : "• None"}

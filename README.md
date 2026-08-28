@@ -6,7 +6,7 @@ Community-maintained fork of the [original calculator](https://github.com/ProEJ7
 
 Calculate uniform order prices and generate copyable ordering templates for QMC.
 
-Item lists follow the [QMC Uniform Guide](https://docs.google.com/document/d/1fc9gU7zDWnZu_3xoFPyP9NUH3D0jb9kDJG7SaAFitOM/edit). Custom PT, Mess Dress, and Greenouts (SRT) are excluded.
+Item lists follow the [QMC Uniform Guide](https://docs.google.com/document/d/1fc9gU7zDWnZu_3xoFPyP9NUH3D0jb9kDJG7SaAFitOM/edit) and [Awards & Decorations](https://docs.google.com/document/d/1iTcTwtrTwjLhMUDras1Tq0NrxOIfmS4MADYSxnxG1Gg/edit). Custom PT, Mess Dress, and Greenouts (SRT) are excluded.
 
 ## Updating prices
 
