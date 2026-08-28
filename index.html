@@ -145,7 +145,9 @@
       <div class="price" id="finalPrice">$0</div>
 
       <div class="price-note">
-        Every selected asset costs $3.
+        Base uniform: $150. Most ribbons, badges, and add-ons: $3 each.
+        <br />
+        <a href="https://docs.google.com/document/d/1fc9gU7zDWnZu_3xoFPyP9NUH3D0jb9kDJG7SaAFitOM/edit" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">QMC Uniform Guide</a>
       </div>
     </div>
 
@@ -215,9 +217,9 @@
 
     HOW THIS WORKS:
 
-    - Each uniform can have different categories.
+    - Each uniform only lists assets allowed per the QMC Uniform Guide.
     - If a category is empty, it stays hidden.
-    - Every checkbox costs 3.
+    - Base uniform is $150; most add-ons are $3.
 
     TO ADD MORE ITEMS:
 
@@ -235,400 +237,212 @@
     */
 
     const DEFAULT_PRICE = 3;
+    const BASE_UNIFORM_PRICE = 150;
+
+    const item = (name, price = DEFAULT_PRICE) => ({ name, price });
+
+    const RIBBONS = [
+      item("Army Distinguished Service Cross"),
+      item("Defense Distinguished Service"),
+      item("Army Distinguished Service"),
+      item("Silver Star"),
+      item("Defense Superior Service"),
+      item("Legion of Merit"),
+      item("Distinguished Flying Cross"),
+      item("Soldiers Medal"),
+      item("Bronze Star"),
+      item("Defense Meritorious Service"),
+      item("Meritorious Service"),
+      item("Air Medal"),
+      item("Joint Service Commendation"),
+      item("Army Commendation"),
+      item("Joint Service Achievement"),
+      item("Army Achievement"),
+      item("Public Service Commendation Medal"),
+      item("Wargames Medal"),
+      item("Army Good Conduct"),
+      item("Army of Occupation Medal"),
+      item("Outstanding Volunteer"),
+      item("National Defense Service", 0),
+      item("Global War on Terrorism Service", 0),
+      item("NCO Professional Development"),
+      item("Army Service", 0),
+      item("Military Justice"),
+      item("Army Recruiting Ribbon"),
+      item("United Nations Medal"),
+      item("Antarctica Service"),
+      item("Armed Forces Expeditionary Medal"),
+      item("Southwest Asia Service"),
+      item("Kosovo Campaign"),
+      item("Kuwait Liberation Medal"),
+      item("Afghanistan Campaign"),
+      item("Iraq Campaign"),
+      item("Joint Special Operations Campaign"),
+      item("Global War on Terrorism Expeditionary"),
+      item("Armed Forces Service Medal"),
+      item("Army Sea Duty"),
+      item("Army Overseas Service"),
+      item("NATO Non-Article 5"),
+      item("NATO Article 5"),
+    ];
+
+    const SKILL_BADGES = [
+      item("Combat Infantryman Badge"),
+      item("Combat Medical Badge"),
+      item("Combat Action Badge"),
+      item("Expert Infantryman Badge"),
+      item("Expert Field Medical Badge"),
+      item("Expert Soldier Badge"),
+      item("Aviator Badge"),
+      item("Flight Surgeon Badge"),
+      item("Aviation Badge"),
+      item("Army Astronaut Device"),
+      item("Explosive Ordnance Disposal Badge"),
+      item("Army Parachutist Badge"),
+      item("Army Pathfinder Badge"),
+      item("Army Air Assault Badge"),
+      item("Military Freefall Badge"),
+      item("Mountaineering Badge"),
+      item("Space Operations Badge"),
+      item("Special Operations Diver Badge"),
+      item("Driver and Mechanic Badges"),
+      item("Marksmanship Badges"),
+    ];
+
+    const SKILL_TABS = [
+      item("Special Forces Tab"),
+      item("Ranger Tab"),
+      item("Sapper Tab"),
+    ];
+
+    const OCP_ID_BADGES = [
+      item("Drill Sergeant Identification Badge"),
+      item("Army Instructor Identification Badge"),
+      item("Master Gunner Identification Badge"),
+      item("Recruiter Badge"),
+    ];
+
+    const DRESS_ID_BADGES = [
+      item("Army Staff Identification Badge"),
+      item("Joint Chiefs of Staff Identification Badge"),
+    ];
+
+    const CSIB = item("Combat Service Identification Badge");
+    const SERVICE_STRIPE = item("Service Stripe");
+    const OVERSEAS_BAR = item("Overseas Bar");
+
+    const FOREIGN_AWARDS_OCP = [
+      item("Marine Special Operations Badge"),
+      item("Marine Corps Combat Aircrew Badge"),
+      item("Republic of Korea Jump Wings"),
+      item("Royal Air Force Parachute Wings"),
+      item("Royal Air Force Aviator Wings"),
+      item("Armed Forces of the Philippines Airborne Badge"),
+    ];
+
+    const AGSU_ACCESSORIES = [
+      item("Ribbon Offset"),
+      item("RDI Offset"),
+      item("Badge Offset"),
+      item("Regimental Distinctive Insignia"),
+      item("Shoulderloop Regimental Distinctive Insignia"),
+      item("Unit Citation"),
+      item("Officer Branch Insignia"),
+      item("Infantry Cord / Infantry Buttons"),
+    ];
+
+    const CLASS_C_ACCESSORIES = [
+      item("Ribbon Offset"),
+      item("RDI Offset"),
+      item("Badge Offset"),
+      item("Regimental Distinctive Insignia"),
+      item("Unit Citation"),
+    ];
 
     const uniformData = {
 
-      "AGSU": {
-        basePrice: 150,
-        
-        ribbons: [
-          { name: "Army Distinguished Service Cross", price: 3 },
-          { name: "Defense Distinguished Service", price: 3 },
-          { name: "Army Distinguished Service", price: 3 },
-          { name: "Silver Star", price: 3 },
-          { name: "Defense Superior Service", price: 3 },
-          { name: "Legion of Merit", price: 3 },
-          { name: "Distinguished Flying Cross", price: 3 },
-          { name: "Soldiers Medal", price: 3 },
-          { name: "Bronze Star", price: 3 },
-          { name: "Defense Meritorious Service", price: 3 },
-          { name: "Meritorious Service", price: 3 },
-          { name: "Air Medal", price: 3 },
-          { name: "Joint Service Commendation", price: 3 },
-          { name: "Army Commendation", price: 3 },
-          { name: "Joint Service Achievement", price: 3 },
-          { name: "Army Achievement", price: 3 },
-          { name: "Public Service Commendation Medal", price: 3 },
-          { name: "Wargames Medal", price: 3 },
-          { name: "Army Good Conduct", price: 3 },
-          { name: "Army of Occupation Medal", price: 3 },
-          { name: "Outstanding Volunteer", price: 3 },
-          { name: "National Defense Service", price: 0 },
-          { name: "Global War on Terrorism Service", price: 0 },
-          { name: "NCO Professional Development", price: 3 },
-          { name: "Army Service", price: 0 },
-          { name: "Military Justice", price: 3 },
-          { name: "Army Recruiting Ribbon", price: 3 },
-          { name: "United Nations Medal", price: 3 },
-          { name: "Antarctica Service", price: 3 },
-          { name: "Armed Forces Expeditionary Medal", price: 3 },
-          { name: "Southwest Asia Service", price: 3 },
-          { name: "Kosovo Campaign", price: 3 },
-          { name: "Kuwait Liberation Medal", price: 3 },
-          { name: "Afghanistan Campaign", price: 3 },
-          { name: "Iraq Campaign", price: 3 },
-          { name: "Joint Special Operations Campaign", price: 3 },
-          { name: "Global War on Terrorism Expeditionary", price: 3 },
-          { name: "Armed Forces Service Medal", price: 3 },
-          { name: "Army Sea Duty", price: 3 },
-          { name: "Army Overseas Service", price: 3 },
-          { name: "NATO Non-Article 5", price: 3 },
-          { name: "NATO Article 5", price: 3 }
-                ],
-
+      "AGSU (Class A)": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: RIBBONS,
         badges: [
-  { name: "Combat Infantryman Badge", price: 3 },
-  { name: "Combat Medical Badge", price: 3 },
-  { name: "Combat Action Badge", price: 3 },
-  { name: "Expert Infantryman Badge", price: 3 },
-  { name: "Expert Field Medical Badge", price: 3 },
-  { name: "Expert Soldier Badge", price: 3 },
-  { name: "Aviator Badge", price: 3 },
-  { name: "Flight Surgeon Badge", price: 3 },
-  { name: "Aviation Badge", price: 3 },
-  { name: "Army Astronaut Device", price: 3 },
-  { name: "Explosive Ordnance Disposal Badge", price: 3 },
-  { name: "Army Parachutist Badge", price: 3 },
-  { name: "Army Pathfinder Badge", price: 3 },
-  { name: "Army Air Assault Badge", price: 3 },
-  { name: "Military Freefall Badge", price: 3 },
-  { name: "Mountaineering Badge", price: 3 },
-  { name: "Space Operations Badge", price: 3 },
-  { name: "Special Operations Diver Badge", price: 3 },
-  { name: "Driver and Mechanic Badges", price: 3 },
-  { name: "Marksmanship Badges", price: 3 },
-  { name: "Drill Sergeant Identification Badge", price: 3 },
-  { name: "Army Instructor Identification Badge", price: 3 },
-  { name: "Master Gunner Identification Badge", price: 3 },
-  { name: "Recruiter Badge", price: 3 },
-  { name: "Army Staff Identification Badge", price: 3 },
-  { name: "Joint Chiefs of Staff Identification Badge", price: 3 },
-  { name: "Combat Service Identification Badge", price: 3 },
-  { name: "Presidents Hundred Tab", price: 3 },
-  { name: "Special Forces Tab", price: 3 },
-  { name: "Ranger Tab", price: 3 },
-  { name: "Sapper Tab", price: 3 },
-  { name: "Jungle Tab", price: 3 },
-  { name: "Arctic Tab", price: 3 },
-  { name: "Overseas Bar", price: 3 },
-  { name: "Service Stripe", price: 3 }
-          
+          ...SKILL_BADGES,
+          ...SKILL_TABS,
+          CSIB,
+          ...DRESS_ID_BADGES,
+          SERVICE_STRIPE,
+          OVERSEAS_BAR,
         ],
-
         foreignDevices: [
-{ name: "Queens Dedication Medal", price: 3 },
-{ name: "Combat Readiness Medal", price: 3 },
-{ name: "Turkish Marksmanship Medal", price: 3 },
-{ name: "Chiefs Fifty Marksmanship Badge", price: 3 },
-{ name: "Marine Special Operations Badge", price: 3 },
-{ name: "Marine Corps Combat Aircrew Badge", price: 3 },
-{ name: "Republic of Korea Jump Wings", price: 3 },
-{ name: "Royal Air Force Parachute Wings", price: 3 },
-{ name: "Royal Air Force Aviator Wings", price: 3 },
-{ name: "Armed Forces of the Philippines Airborne Badge", price: 3 }
+          item("Republic of Korea Jump Wings"),
         ],
-
-        accessories: [
-          { name: "Ribbon Offset", price: 3 },
-          { name: "RDI Offset", price: 3 },
-          { name: "Badge Offset", price: 3 }
-        ],
+        accessories: AGSU_ACCESSORIES,
       },
 
       "OCP": {
-        basePrice: 150,
-        
+        basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
-
         badges: [
-  { name: "Combat Infantryman Badge", price: 3 },
-  { name: "Combat Medical Badge", price: 3 },
-  { name: "Combat Action Badge", price: 3 },
-  { name: "Expert Infantryman Badge", price: 3 },
-  { name: "Expert Field Medical Badge", price: 3 },
-  { name: "Expert Soldier Badge", price: 3 },
-  { name: "Aviator Badge", price: 3 },
-  { name: "Flight Surgeon Badge", price: 3 },
-  { name: "Aviation Badge", price: 3 },
-  { name: "Army Astronaut Device", price: 3 },
-  { name: "Explosive Ordnance Disposal Badge", price: 3 },
-  { name: "Army Parachutist Badge", price: 3 },
-  { name: "Army Pathfinder Badge", price: 3 },
-  { name: "Army Air Assault Badge", price: 3 },
-  { name: "Military Freefall Badge", price: 3 },
-  { name: "Mountaineering Badge", price: 3 },
-  { name: "Space Operations Badge", price: 3 },
-  { name: "Special Operations Diver Badge", price: 3 },
-  { name: "Drill Sergeant Identification Badge", price: 3 },
-  { name: "Army Instructor Identification Badge", price: 3 },
-  { name: "Master Gunner Identification Badge", price: 3 },
-  { name: "Recruiter Badge", price: 3 },
-  { name: "Combat Service Identification Badge", price: 3 },
-  { name: "Presidents Hundred Tab", price: 3 },
-  { name: "Special Forces Tab", price: 3 },
-  { name: "Ranger Tab", price: 3 },
-  { name: "Sapper Tab", price: 3 },
-  { name: "Jungle Tab", price: 3 },
-  { name: "Arctic Tab", price: 3 }
+          ...SKILL_BADGES,
+          ...SKILL_TABS,
+          CSIB,
+          ...OCP_ID_BADGES,
         ],
+        foreignDevices: FOREIGN_AWARDS_OCP,
+        accessories: [],
+      },
 
-        foreignDevices: [
-{ name: "Marine Special Operations Badge", price: 3 },
-{ name: "Marine Corps Combat Aircrew Badge", price: 3 },
-{ name: "Republic of Korea Jump Wings", price: 3 },
-{ name: "Royal Air Force Parachute Wings", price: 3 },
-{ name: "Royal Air Force Aviator Wings", price: 3 },
-{ name: "Armed Forces of the Philippines Airborne Badge", price: 3 }
+      "Rolled OCP": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: [
+          ...SKILL_BADGES,
+          ...SKILL_TABS,
+          CSIB,
+          ...OCP_ID_BADGES,
         ],
-
+        foreignDevices: FOREIGN_AWARDS_OCP,
         accessories: [
-        { name: "Watch", price: 3 }
-        ]
+          item("Watch"),
+        ],
       },
 
       "Tigerstripes": {
-        basePrice: 150,
+        basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
-
         badges: [
-  { name: "Combat Infantryman Badge", price: 3 },
-  { name: "Combat Medical Badge", price: 3 },
-  { name: "Combat Action Badge", price: 3 },
-  { name: "Expert Infantryman Badge", price: 3 },
-  { name: "Expert Field Medical Badge", price: 3 },
-  { name: "Expert Soldier Badge", price: 3 },
-  { name: "Aviator Badge", price: 3 },
-  { name: "Flight Surgeon Badge", price: 3 },
-  { name: "Aviation Badge", price: 3 },
-  { name: "Army Astronaut Device", price: 3 },
-  { name: "Explosive Ordnance Disposal Badge", price: 3 },
-  { name: "Army Parachutist Badge", price: 3 },
-  { name: "Army Pathfinder Badge", price: 3 },
-  { name: "Army Air Assault Badge", price: 3 },
-  { name: "Military Freefall Badge", price: 3 },
-  { name: "Mountaineering Badge", price: 3 },
-  { name: "Space Operations Badge", price: 3 },
-  { name: "Special Operations Diver Badge", price: 3 },
-  { name: "Combat Service Identification Badge", price: 3 },
-  { name: "Presidents Hundred Tab", price: 3 },
-  { name: "Special Forces Tab", price: 3 },
-  { name: "Ranger Tab", price: 3 },
-  { name: "Sapper Tab", price: 3 },
-  { name: "Jungle Tab", price: 3 },
-  { name: "Arctic Tab", price: 3 }
+          ...SKILL_BADGES,
+          ...SKILL_TABS,
         ],
-
-        foreignDevices: [
-{ name: "Marine Special Operations Badge", price: 3 },
-{ name: "Marine Corps Combat Aircrew Badge", price: 3 },
-{ name: "Republic of Korea Jump Wings", price: 3 },
-{ name: "Royal Air Force Parachute Wings", price: 3 },
-{ name: "Royal Air Force Aviator Wings", price: 3 },
-{ name: "Armed Forces of the Philippines Airborne Badge", price: 3 }
-        ],
-
-        accessories: [
-        { name: "Watch", price: 3 }
-        ]
+        foreignDevices: [],
+        accessories: [],
       },
+
       "Class C": {
-        basePrice: 150,
-        ribbons: [
-          { name: "Army Distinguished Service Cross", price: 3 },
-          { name: "Defense Distinguished Service", price: 3 },
-          { name: "Army Distinguished Service", price: 3 },
-          { name: "Silver Star", price: 3 },
-          { name: "Defense Superior Service", price: 3 },
-          { name: "Legion of Merit", price: 3 },
-          { name: "Distinguished Flying Cross", price: 3 },
-          { name: "Soldiers Medal", price: 3 },
-          { name: "Bronze Star", price: 3 },
-          { name: "Defense Meritorious Service", price: 3 },
-          { name: "Meritorious Service", price: 3 },
-          { name: "Air Medal", price: 3 },
-          { name: "Joint Service Commendation", price: 3 },
-          { name: "Army Commendation", price: 3 },
-          { name: "Joint Service Achievement", price: 3 },
-          { name: "Army Achievement", price: 3 },
-          { name: "Public Service Commendation Medal", price: 3 },
-          { name: "Wargames Medal", price: 3 },
-          { name: "Army Good Conduct", price: 3 },
-          { name: "Army of Occupation Medal", price: 3 },
-          { name: "Outstanding Volunteer", price: 3 },
-          { name: "National Defense Service", price: 0 },
-          { name: "Global War on Terrorism Service", price: 0 },
-          { name: "NCO Professional Development", price: 3 },
-          { name: "Army Service", price: 0 },
-          { name: "Military Justice", price: 3 },
-          { name: "Army Recruiting Ribbon", price: 3 },
-          { name: "United Nations Medal", price: 3 },
-          { name: "Antarctica Service", price: 3 },
-          { name: "Armed Forces Expeditionary Medal", price: 3 },
-          { name: "Southwest Asia Service", price: 3 },
-          { name: "Kosovo Campaign", price: 3 },
-          { name: "Kuwait Liberation Medal", price: 3 },
-          { name: "Afghanistan Campaign", price: 3 },
-          { name: "Iraq Campaign", price: 3 },
-          { name: "Joint Special Operations Campaign", price: 3 },
-          { name: "Global War on Terrorism Expeditionary", price: 3 },
-          { name: "Armed Forces Service Medal", price: 3 },
-          { name: "Army Sea Duty", price: 3 },
-          { name: "Army Overseas Service", price: 3 },
-          { name: "NATO Non-Article 5", price: 3 },
-          { name: "NATO Article 5", price: 3 }
-        ],
-
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: RIBBONS,
         badges: [
-  { name: "Combat Infantryman Badge", price: 3 },
-  { name: "Combat Medical Badge", price: 3 },
-  { name: "Combat Action Badge", price: 3 },
-  { name: "Expert Infantryman Badge", price: 3 },
-  { name: "Expert Field Medical Badge", price: 3 },
-  { name: "Expert Soldier Badge", price: 3 },
-  { name: "Aviator Badge", price: 3 },
-  { name: "Flight Surgeon Badge", price: 3 },
-  { name: "Aviation Badge", price: 3 },
-  { name: "Army Astronaut Device", price: 3 },
-  { name: "Explosive Ordnance Disposal Badge", price: 3 },
-  { name: "Army Parachutist Badge", price: 3 },
-  { name: "Army Pathfinder Badge", price: 3 },
-  { name: "Army Air Assault Badge", price: 3 },
-  { name: "Military Freefall Badge", price: 3 },
-  { name: "Mountaineering Badge", price: 3 },
-  { name: "Space Operations Badge", price: 3 },
-  { name: "Special Operations Diver Badge", price: 3 },
-  { name: "Driver and Mechanic Badges", price: 3 },
-  { name: "Marksmanship Badges", price: 3 },
-  { name: "Drill Sergeant Identification Badge", price: 3 },
-  { name: "Army Instructor Identification Badge", price: 3 },
-  { name: "Master Gunner Identification Badge", price: 3 },
-  { name: "Recruiter Badge", price: 3 },
-  { name: "Army Staff Identification Badge", price: 3 },
-  { name: "Joint Chiefs of Staff Identification Badge", price: 3 },
-  { name: "Combat Service Identification Badge", price: 3 },
-  { name: "Presidents Hundred Tab", price: 3 },
-  { name: "Special Forces Tab", price: 3 },
-  { name: "Ranger Tab", price: 3 },
-  { name: "Sapper Tab", price: 3 },
-  { name: "Jungle Tab", price: 3 },
-  { name: "Arctic Tab", price: 3 }
+          ...SKILL_BADGES,
+          ...SKILL_TABS,
+          CSIB,
+          ...DRESS_ID_BADGES,
         ],
-
-        foreignDevices: [
-          { name: "Queens Dedication Medal", price: 3 },
-{ name: "Combat Readiness Medal", price: 3 },
-{ name: "Turkish Marksmanship Medal", price: 3 },
-{ name: "Chiefs Fifty Marksmanship Badge", price: 3 },
-{ name: "Marine Special Operations Badge", price: 3 },
-{ name: "Marine Corps Combat Aircrew Badge", price: 3 },
-{ name: "Republic of Korea Jump Wings", price: 3 },
-{ name: "Royal Air Force Parachute Wings", price: 3 },
-{ name: "Royal Air Force Aviator Wings", price: 3 },
-{ name: "Armed Forces of the Philippines Airborne Badge", price: 3 }
-        ],
-
-        accessories: [
-        { name: "Watch", price: 3 },
-        { name: "Ribbon Offset", price: 3 },
-        { name: "RDI Offset", price: 3 },
-        { name: "Badge Offset", price: 3 }
-        ]
+        foreignDevices: [],
+        accessories: CLASS_C_ACCESSORIES,
       },
 
       "Class B": {
-        basePrice: 150,
-        ribbons: [
-          { name: "Army Distinguished Service Cross", price: 3 },
-          { name: "Defense Distinguished Service", price: 3 },
-          { name: "Army Distinguished Service", price: 3 },
-          { name: "Silver Star", price: 3 },
-          { name: "Defense Superior Service", price: 3 },
-          { name: "Legion of Merit", price: 3 },
-          { name: "Distinguished Flying Cross", price: 3 },
-          { name: "Soldiers Medal", price: 3 },
-          { name: "Bronze Star", price: 3 },
-          { name: "Defense Meritorious Service", price: 3 },
-          { name: "Meritorious Service", price: 3 },
-          { name: "Air Medal", price: 3 },
-          { name: "Joint Service Commendation", price: 3 },
-          { name: "Army Commendation", price: 3 },
-          { name: "Joint Service Achievement", price: 3 },
-          { name: "Army Achievement", price: 3 },
-          { name: "Public Service Commendation Medal", price: 3 },
-          { name: "Wargames Medal", price: 3 },
-          { name: "Army Good Conduct", price: 3 },
-          { name: "Army of Occupation Medal", price: 3 },
-          { name: "Outstanding Volunteer", price: 3 },
-          { name: "National Defense Service", price: 0 },
-          { name: "Global War on Terrorism Service", price: 0 },
-          { name: "NCO Professional Development", price: 3 },
-          { name: "Army Service", price: 0 },
-          { name: "Military Justice", price: 3 },
-          { name: "Army Recruiting Ribbon", price: 3 },
-          { name: "United Nations Medal", price: 3 },
-          { name: "Antarctica Service", price: 3 },
-          { name: "Armed Forces Expeditionary Medal", price: 3 },
-          { name: "Southwest Asia Service", price: 3 },
-          { name: "Kosovo Campaign", price: 3 },
-          { name: "Kuwait Liberation Medal", price: 3 },
-          { name: "Afghanistan Campaign", price: 3 },
-          { name: "Iraq Campaign", price: 3 },
-          { name: "Joint Special Operations Campaign", price: 3 },
-          { name: "Global War on Terrorism Expeditionary", price: 3 },
-          { name: "Armed Forces Service Medal", price: 3 },
-          { name: "Army Sea Duty", price: 3 },
-          { name: "Army Overseas Service", price: 3 },
-          { name: "NATO Non-Article 5", price: 3 },
-          { name: "NATO Article 5", price: 3 }
-        ],
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: RIBBONS,
         badges: [
-  { name: "Combat Infantryman Badge", price: 3 },
-  { name: "Combat Medical Badge", price: 3 },
-  { name: "Combat Action Badge", price: 3 },
-  { name: "Expert Infantryman Badge", price: 3 },
-  { name: "Expert Field Medical Badge", price: 3 },
-  { name: "Expert Soldier Badge", price: 3 },
-  { name: "Aviator Badge", price: 3 },
-  { name: "Flight Surgeon Badge", price: 3 },
-  { name: "Aviation Badge", price: 3 },
-  { name: "Army Astronaut Device", price: 3 },
-  { name: "Explosive Ordnance Disposal Badge", price: 3 },
-  { name: "Army Parachutist Badge", price: 3 },
-  { name: "Army Pathfinder Badge", price: 3 },
-  { name: "Army Air Assault Badge", price: 3 },
-  { name: "Military Freefall Badge", price: 3 },
-  { name: "Mountaineering Badge", price: 3 },
-  { name: "Space Operations Badge", price: 3 },
-  { name: "Special Operations Diver Badge", price: 3 },
-  { name: "Presidents Hundred Tab", price: 3 },
-  { name: "Special Forces Tab", price: 3 },
-  { name: "Ranger Tab", price: 3 },
-  { name: "Sapper Tab", price: 3 },
-  { name: "Jungle Tab", price: 3 },
-  { name: "Arctic Tab", price: 3 }
+          ...SKILL_TABS,
+          ...SKILL_BADGES,
         ],
-        foreignDevices: [
-{ name: "Queens Dedication Medal", price: 3 },
-{ name: "Combat Readiness Medal", price: 3 },
-{ name: "Turkish Marksmanship Medal", price: 3 }
-        ],
+        foreignDevices: [],
         accessories: [
-            { name: "Watch", price: 3 },
-        { name: "Ribbon Offset", price: 3 },
-        { name: "RDI Offset", price: 3 },
-        { name: "Badge Offset", price: 3 }
-        ]
-      }
+          item("Watch"),
+          item("Regimental Distinctive Insignia"),
+        ],
+      },
 
     };
 
