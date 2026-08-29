@@ -1068,6 +1068,17 @@
 
     const UNIT_CITATION_NAMES = new Set(UNIT_CITATIONS.map((u) => u.name));
 
+    function formatDiscordMention(raw, placeholder = "[Discord ID]") {
+      const v = String(raw || "").trim();
+      if (!v) return `<@${placeholder}>`;
+      const already = v.match(/^<@!?(\d+)>$/);
+      if (already) return `<@${already[1]}>`;
+      const digits = v.replace(/^@/, "");
+      if (/^\d{5,20}$/.test(digits)) return `<@${digits}>`;
+      // username / @name — leave as @name (not a snowflake mention)
+      return digits.startsWith("@") ? digits : `@${digits}`;
+    }
+
     function escapeHtml(str) {
       return String(str ?? "")
         .replace(/&/g, "&amp;")
@@ -1825,7 +1836,7 @@ const UNIT_TREE = [
       const offsetNames = ["Ribbon Offset", "Badge Offset", "RDI Offset"];
       const offsets = selected.Accessories.filter((n) => offsetNames.includes(n));
       if (offsets.length > 2) {
-        issues.push(`Offsets: ${offsets.length}/2 — AGSU allows max 2 offsets.`);
+        issues.push(`Offsets: ${offsets.length}/2 — max 2 offsets on this uniform.`);
       }
 
       // Tiger / ACS: only one combat shirt style family at a time is N/A (single uniform).
@@ -1896,7 +1907,7 @@ const UNIT_TREE = [
       }
 
       templateOutput.value =
-`**Name:** <@${fName.value || "[Discord ID]"}>
+`**Name:** ${formatDiscordMention(fName.value)}
 **Rank:** ${fPaygrade.value || "[Paygrade]"}, ${fRank.value || "[Rank]"}
 **Type:** ${uniformSelect.value || "[Uniform]"}
 **Gender:** ${fGender.value}
@@ -1913,7 +1924,7 @@ ${misc.length ? `\n**Misc:** ${misc.join(", ")}\n` : ""}
 **Nametape:** ${fNametape.value || ""}
 **Offset:** ${offsetParts.length ? offsetParts.join(", ") : "None"}
 ${priceLine}
-**Robux Proof Sent to:** <@${fProof.value || "[Discord ID]"}>`;
+**Robux Proof Sent to:** ${formatDiscordMention(fProof.value)}`;
     }
 
 
@@ -2087,32 +2098,55 @@ ${priceLine}
       return (authProfile.groups || []).some((g) => Number(g.groupId) === CID_ROBLOX_GROUP_ID);
     }
 
-    /** USAR HQ roles that authorize Army Staff / Joint Chiefs ID badges. */
-    const USAR_STAFF_ROLE_RE =
-      /\b(SMA|DAS|VCSA|CSA|CJCS)\b|Sergeant Major of the Army|Director of the Army Staff|Vice Chief of Staff(?: of the Army)?|Chief of Staff(?: of the Army)?|Chairman(?: of)?(?: the)? Joint Chiefs/i;
-
-    function profileHasUsarStaffRole() {
-      if (!authProfile?.usar) return false;
-      const role = [
+    /** USAR role text for staff badge checks (abbreviations matched as whole tokens). */
+    function usarRoleBlob() {
+      if (!authProfile?.usar) return "";
+      return [
         authProfile.usar.roleName,
         authProfile.usar.rankName,
         authProfile.usar.paygrade === "E9C" ? "SMA" : "",
       ]
         .filter(Boolean)
         .join(" ");
-      return USAR_STAFF_ROLE_RE.test(role);
+    }
+
+    function roleHasToken(blob, token) {
+      return new RegExp(`\\b${token}\\b`, "i").test(blob);
+    }
+
+    /** Army Staff ID: SMA, DAS, VCSA, CSA (not CJCS). */
+    function profileHasArmyStaffRole() {
+      const blob = usarRoleBlob();
+      if (!blob) return false;
+      if (roleHasToken(blob, "SMA") || roleHasToken(blob, "DAS") || roleHasToken(blob, "VCSA")) return true;
+      if (roleHasToken(blob, "CSA") && !roleHasToken(blob, "VCSA")) return true;
+      if (/Sergeant Major of the Army/i.test(blob)) return true;
+      if (/Director of the Army Staff/i.test(blob)) return true;
+      if (/Vice Chief of Staff of the Army/i.test(blob)) return true;
+      // Require "of the Army" for CSA long form to avoid random Chief of Staff titles
+      if (/\bChief of Staff of the Army\b/i.test(blob)) return true;
+      return false;
+    }
+
+    /** Joint Chiefs ID: CJCS only. */
+    function profileHasJointChiefsRole() {
+      const blob = usarRoleBlob();
+      if (!blob) return false;
+      if (roleHasToken(blob, "CJCS")) return true;
+      if (/Chairman(?: of)?(?: the)? Joint Chiefs/i.test(blob)) return true;
+      return false;
+    }
+
+    function profileHasUsarStaffRole() {
+      return profileHasArmyStaffRole() || profileHasJointChiefsRole();
     }
 
     /** ID badges not on the QMC sheet — unlocked by Roblox command / USAR role. */
     function awardUnlockedByUnit(itemName) {
       if (itemName === "Military Police Identification Badge") return profileInMpc();
       if (itemName === "Criminal Investigation Division Identification Badge") return profileInCid();
-      if (
-        itemName === "Army Staff Identification Badge" ||
-        itemName === "Joint Chiefs Identification Badge"
-      ) {
-        return profileHasUsarStaffRole();
-      }
+      if (itemName === "Army Staff Identification Badge") return profileHasArmyStaffRole();
+      if (itemName === "Joint Chiefs Identification Badge") return profileHasJointChiefsRole();
       return false;
     }
 
@@ -2125,10 +2159,14 @@ ${priceLine}
         const blockedByMaster =
           type === "Badges" &&
           (hasMasterCombatThatBlocks(box.value) || hasMasterThatBlocksBase(box.value));
+        const pg = currentPaygrade();
         const blockedAviator =
           type === "Badges" &&
           box.value === "Aviator Badge" &&
-          !isOfficerPaygrade(currentPaygrade());
+          (
+            /^E\d+/i.test(pg) ||
+            (Boolean(earnedAwardKeys) && pg && !isOfficerPaygrade(pg))
+          );
         const citationLocked =
           type === "Accessories" &&
           earnedAwardKeys &&
@@ -2323,32 +2361,49 @@ ${priceLine}
         const returnTo = encodeURIComponent(PAGES_RETURN);
         location.href = apiUrl("/api/auth/roblox?returnTo=" + returnTo);
       };
-      logoutBtn.onclick = () => {
+      logoutBtn.onclick = async () => {
+        try {
+          await fetch(apiUrl("/api/auth/logout"), {
+            credentials: API_BASE ? "omit" : "same-origin",
+            headers: { ...authHeaders(), Accept: "application/json" },
+          });
+        } catch (_) {
+          /* still clear local session */
+        }
         setToken("");
         authProfile = null;
         earnedAwardKeys = null;
         earnedDisplayByItem = new Map();
         renderAuthBar(null);
-        // Re-enable all award checkboxes and reset tier / count / CSIB UI
+        fName.value = "";
+        fProof.value = "";
+        fPaygrade.value = "";
+        fRank.value = "";
+        fNametape.value = "";
+        divisionPath = [];
+        wireDivision();
+        // Uncheck and re-enable award checkboxes; reset tier / count / CSIB UI
         document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
+          box.checked = false;
           box.disabled = false;
           box.parentElement.classList.remove("locked-out", "soft-disabled");
           const tier = box.parentElement.querySelector(".tier-select");
           if (tier) {
             tier.selectedIndex = 0;
-            tier.disabled = !box.checked;
+            tier.disabled = true;
           }
           const awardCount = box.parentElement.querySelector(".award-count-select");
           if (awardCount) {
             awardCount.value = "1";
-            awardCount.disabled = !box.checked;
+            awardCount.disabled = true;
           }
           const csibSelect = box.parentElement.querySelector(".csib-unit-select");
           if (csibSelect) {
             populateCsibSelect(csibSelect);
-            csibSelect.disabled = !box.checked;
+            csibSelect.disabled = true;
           }
         });
+        applyAwardLocks();
         updateCalculator();
       };
 
@@ -2391,6 +2446,7 @@ ${priceLine}
       _origCreateCheckboxes(container, items, type);
       applyAwardLocks();
       if (authProfile) applyEarnedAwardsToForm(authProfile);
+      applyAwardLocks();
     };
 
     loadAuthProfile();

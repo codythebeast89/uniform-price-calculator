@@ -28,7 +28,7 @@ export const BASIC_TRAINING_AUTO_RIBBONS = [
 
 export function parseUsarEnlistedGrade(roleName) {
   if (!roleName) return null;
-  const bracket = roleName.match(/\[E(\d+)\]/i);
+  const bracket = roleName.match(/\[E(\d+)[A-C]?\]/i);
   if (bracket) return Number(bracket[1]);
   return null;
 }

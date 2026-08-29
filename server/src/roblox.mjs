@@ -84,12 +84,9 @@ export async function fetchBirthdate(accessToken) {
 
 export function isAtLeast13(birthdate) {
   if (!birthdate || birthdate.unavailable) {
-    // Fail closed when explicitly set, or in production HTTPS deployments.
-    const failClosed =
-      process.env.LOGIN_FAIL_CLOSED_AGE === "1" ||
-      (process.env.LOGIN_FAIL_CLOSED_AGE !== "0" &&
-        String(process.env.SITE_URL || process.env.PUBLIC_API_URL || "").startsWith("https://"));
-    return !failClosed;
+    // Default fail-open: Roblox openid profile often omits birthdate.
+    // Set LOGIN_FAIL_CLOSED_AGE=1 only when a birthday scope is known to work.
+    return process.env.LOGIN_FAIL_CLOSED_AGE !== "1";
   }
   if (!birthdate.birthYear || !birthdate.birthMonth || !birthdate.birthDay) return false;
   const born = new Date(Date.UTC(birthdate.birthYear, birthdate.birthMonth - 1, birthdate.birthDay));
