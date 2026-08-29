@@ -26,7 +26,7 @@ resolve_host() {
 REMOTE_HOST="$(resolve_host)"
 echo "==> Deploying to $REMOTE_HOST:$REMOTE_DIR"
 
-ssh "$REMOTE_HOST" "mkdir -p '$REMOTE_DIR/server/data' '$REMOTE_DIR/deploy' '$HOME/.config/systemd/user'"
+ssh "$REMOTE_HOST" "mkdir -p '$REMOTE_DIR/server/data' '$REMOTE_DIR/deploy' \"\$HOME/.config/systemd/user\""
 
 rsync -az --delete \
   --exclude node_modules \
