@@ -148,15 +148,34 @@ async function readSession(req) {
   }
 }
 
+function isBlockedStaticPath(pathname) {
+  const p = pathname.replace(/^\/+/, "").toLowerCase();
+  if (!p) return false;
+  if (p.startsWith("server/") || p === "server") return true;
+  if (p.startsWith("deploy/") || p.startsWith("docs/") || p.startsWith("scripts/")) return true;
+  if (p.startsWith(".git/") || p === ".git") return true;
+  if (/(^|\/)\.env(\.|$)/.test(p)) return true;
+  if (p.endsWith(".mjs") || p.endsWith(".env") || p.endsWith(".example")) return true;
+  return false;
+}
+
 function serveStatic(req, res, url) {
-  let pathname = decodeURIComponent(url.pathname);
+  let pathname;
+  try {
+    pathname = decodeURIComponent(url.pathname);
+  } catch {
+    return text(res, 400, "Bad path");
+  }
   if (pathname === "/") pathname = "/index.html";
+  if (isBlockedStaticPath(pathname)) {
+    return text(res, 404, "Not found");
+  }
   const filePath = join(STATIC_ROOT, pathname.replace(/^\/+/, ""));
   if (!filePath.startsWith(STATIC_ROOT) || !existsSync(filePath) || !statSync(filePath).isFile()) {
     return text(res, 404, "Not found");
   }
   const type = MIME[extname(filePath)] || "application/octet-stream";
-  res.writeHead(200, { "Content-Type": type });
+  res.writeHead(200, { "Content-Type": type, "X-Content-Type-Options": "nosniff" });
   res.end(readFileSync(filePath));
 }
 
