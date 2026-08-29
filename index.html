@@ -863,6 +863,7 @@
         ribbons: RIBBONS,
         badges: [
           ...SKILL_BADGES,
+          DRIVER_MECHANIC_BADGE,
           ...ALL_SKILL_TABS,
           CSIB,
           ...DRESS_ID_BADGES,
@@ -1413,6 +1414,7 @@ const UNIT_TREE = [
 
     fPaygrade.addEventListener("change", () => {
       fRank.value = RANK_NAMES[fPaygrade.value] || "";
+      applyAwardLocks();
       updateCalculator();
     });
 
@@ -1966,14 +1968,26 @@ ${priceLine}
       return Boolean(box?.checked);
     }
 
+    function isOfficerPaygrade(pg) {
+      return /^O\d+/i.test(String(pg || "").trim());
+    }
+
+    function currentPaygrade() {
+      return (authProfile?.usar?.paygrade || fPaygrade.value || "").trim();
+    }
+
     function applyAwardLocks() {
       document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
         const type = box.dataset.type;
         if (!["Ribbons", "Badges", "Foreign Ribbons", "Foreign Badges"].includes(type)) return;
         const label = box.parentElement;
         const blockedByMaster = type === "Badges" && hasMasterCombatThatBlocks(box.value);
+        const blockedAviator =
+          type === "Badges" &&
+          box.value === "Aviator Badge" &&
+          !isOfficerPaygrade(currentPaygrade());
         const earned = awardIsEarned(box.value);
-        if ((earnedAwardKeys && !earned) || blockedByMaster) {
+        if ((earnedAwardKeys && !earned) || blockedByMaster || blockedAviator) {
           box.checked = false;
           box.disabled = true;
           label.classList.add("locked-out");
@@ -2028,6 +2042,7 @@ ${priceLine}
       document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
         if (box.disabled) return;
         const itemName = box.value;
+        if (itemName === "Aviator Badge" && !isOfficerPaygrade(currentPaygrade())) return;
         const match = profile.awards.find((a) => awardMatchesCatalogItem(a.name, itemName));
         if (!match) return;
 
