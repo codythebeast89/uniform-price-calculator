@@ -6,6 +6,11 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { applyAutoAwards } from "./auto-awards.mjs";
+import {
+  UNIT_AWARDS_SHEET,
+  parseUnitAwardsRows,
+  unitCitationsForPath,
+} from "./unit-awards.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -31,6 +36,8 @@ const INVISIBLE_CHARS = /[\u200b\u200c\u200d\ufeff]/g;
 const CJS_RE = /\(?\s*(?:(\d+)\s*x|x\s*(\d+))\s*CJS\s*\)?/i;
 
 let awardsByUser = new Map();
+/** catalog citation name → unit labels from Unit Awards tab */
+let unitAwardsIndex = {};
 let lastSync = null;
 let syncPromise = null;
 let cacheFile = process.env.AWARDS_CACHE_PATH || null;
@@ -276,6 +283,16 @@ export async function buildAwardsIndex(columns) {
   return buildAwardsIndexFromRows(sheetRows, columns);
 }
 
+async function fetchUnitAwardsIndex() {
+  try {
+    const rows = await fetchSheet(UNIT_AWARDS_SHEET);
+    return parseUnitAwardsRows(rows);
+  } catch (err) {
+    console.error("Unit Awards sheet sync failed:", err);
+    return {};
+  }
+}
+
 function publicAward(award) {
   return { category: award.category, name: award.name };
 }
@@ -284,8 +301,9 @@ export async function syncAwards({ force = false } = {}) {
   if (syncPromise && !force) return syncPromise;
   syncPromise = (async () => {
     const columns = loadAwardColumns();
-    const map = await buildAwardsIndex(columns);
+    const [map, unitIndex] = await Promise.all([buildAwardsIndex(columns), fetchUnitAwardsIndex()]);
     awardsByUser = map;
+    unitAwardsIndex = unitIndex;
     lastSync = new Date().toISOString();
 
     const cachePath = cacheFile || process.env.AWARDS_CACHE_PATH || join(ROOT, "data", "awards-cache.json");
@@ -295,10 +313,14 @@ export async function syncAwards({ force = false } = {}) {
       JSON.stringify({
         syncedAt: lastSync,
         userCount: map.size,
+        unitAwards: unitIndex,
         awards: Object.fromEntries(map),
       }),
     );
-    console.log(`Awards synced: ${map.size} users @ ${lastSync}`);
+    const unitAwardCount = Object.values(unitIndex).reduce((n, u) => n + u.length, 0);
+    console.log(
+      `Awards synced: ${map.size} users, ${Object.keys(unitIndex).length} unit-citation types (${unitAwardCount} unit rows) @ ${lastSync}`,
+    );
   })().finally(() => {
     syncPromise = null;
   });
@@ -312,6 +334,9 @@ export function loadAwardsCache(dataDir) {
   try {
     const meta = JSON.parse(readFileSync(cachePath, "utf8"));
     lastSync = meta.syncedAt || null;
+    if (meta.unitAwards && typeof meta.unitAwards === "object") {
+      unitAwardsIndex = meta.unitAwards;
+    }
     if (meta.awards && typeof meta.awards === "object") {
       awardsByUser = new Map(
         Object.entries(meta.awards).map(([username, awards]) => [
@@ -329,11 +354,24 @@ export function loadAwardsCache(dataDir) {
 export function getAwardsForUsername(username, context = {}) {
   if (!username) return [];
   const base = (awardsByUser.get(username.toLowerCase()) || []).map(publicAward);
-  return applyAutoAwards(base, context);
+  const withAuto = applyAutoAwards(base, context);
+  const unitCitations = unitCitationsForPath(context.unitPath, unitAwardsIndex);
+  if (!unitCitations.length) return withAuto;
+  const existing = new Set(withAuto.map((a) => a.name));
+  const extra = unitCitations.filter((a) => !existing.has(a.name));
+  return [...withAuto, ...extra];
 }
 
 export function getAwardsStatus() {
-  return { lastSync, userCount: awardsByUser.size };
+  return {
+    lastSync,
+    userCount: awardsByUser.size,
+    unitAwardTypes: Object.keys(unitAwardsIndex).length,
+  };
+}
+
+export function getUnitAwardsIndex() {
+  return unitAwardsIndex;
 }
 
 export function startAwardsRefresh() {

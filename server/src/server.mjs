@@ -346,7 +346,10 @@ async function handleMe(req, res) {
   });
 
   const usarRoleName = profile.usar?.roleName || null;
-  const awards = getAwardsForUsername(session.username, { usarRoleName });
+  const awards = getAwardsForUsername(session.username, {
+    usarRoleName,
+    unitPath: profile.unit?.path || [],
+  });
 
   json(
     res,
