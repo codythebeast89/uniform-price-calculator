@@ -627,9 +627,11 @@
       item("Mountaineering Badge"),
       item("Space Operations Badge"),
       item("Special Operations Diver Badge"),
-      item("Driver and Mechanic Badge"),
       item("Marksmanship Badge"),
     ];
+
+    /** Dress uniforms only (AGSU / Class B / Class C) — not OCP or tiger variants. */
+    const DRIVER_MECHANIC_BADGE = item("Driver and Mechanic Badge");
 
     // Combat tabs used on OCP-style uniforms (console COMBAT_TABS; P100 is Group 5 — OCP-prohibited).
     const COMBAT_TABS = [
@@ -718,6 +720,7 @@
       badges: [
         ...ALL_SKILL_TABS,
         ...SKILL_BADGES,
+        DRIVER_MECHANIC_BADGE,
       ],
       foreignRibbons: [],
       foreignBadges: [],
@@ -727,6 +730,7 @@
       ribbons: RIBBONS,
       badges: [
         ...SKILL_BADGES,
+        DRIVER_MECHANIC_BADGE,
         ...ALL_SKILL_TABS,
         CSIB,
         ...DRESS_ID_BADGES,
@@ -2161,6 +2165,7 @@ ${priceLine}
           setToken("");
           authProfile = null;
           earnedAwardKeys = null;
+          earnedDisplayByItem = new Map();
           renderAuthBar(null);
           return;
         }
