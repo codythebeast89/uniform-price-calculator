@@ -1,6 +1,7 @@
 /**
  * Unit Awards tab: command/division → unit citation unlocks (not per-username).
  * Sheet tab name has a trailing space: "Unit Awards ".
+ * A unit listed multiple times under the same award → count (xN).
  */
 
 export const UNIT_AWARDS_SHEET = "Unit Awards ";
@@ -15,11 +16,9 @@ export const UNIT_AWARD_NAME_MAP = {
   "army superior unit award": "Army Superior Unit Award",
 };
 
-/** Extra aliases so sheet unit labels match Roblox / UNIT_TREE paths. */
-const UNIT_ALIASES = {
-  "75th rangers regiment": "75th ranger regiment",
-  "army special forces": "army special forces",
-  delta: "delta force",
+/** Canonical display labels for sheet spelling oversights. */
+const CANONICAL_UNIT_LABEL = {
+  "75 ranger regiment": "75th Ranger Regiment",
 };
 
 export function stripUnitAwardCell(cell) {
@@ -36,10 +35,16 @@ export function normalizeUnitKey(name) {
   let s = String(name || "")
     .toLowerCase()
     .replace(/\brangers\b/g, "ranger")
+    // "75th" / "75" / "1st" → same numeric unit key
+    .replace(/\b(\d+)(?:st|nd|rd|th)\b/g, "$1")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
-  if (UNIT_ALIASES[s]) s = UNIT_ALIASES[s];
   return s;
+}
+
+export function canonicalUnitLabel(unit) {
+  const key = normalizeUnitKey(unit);
+  return CANONICAL_UNIT_LABEL[key] || unit;
 }
 
 export function catalogUnitAwardName(header) {
@@ -51,8 +56,8 @@ export function catalogUnitAwardName(header) {
 }
 
 /**
- * Parse Unit Awards CSV rows → { "Army Presidential Unit Citation": ["Army Special Forces", …], … }
- * Headers on row index 1; award columns at indices 2,5,8,11,14 (C/F/I/L/O).
+ * Parse Unit Awards CSV → { "Army Valorous Unit Award": [{ name, count }, …], … }
+ * Duplicate / alias spellings (e.g. 75th Ranger vs 75th Rangers) count toward xN.
  */
 export function parseUnitAwardsRows(rows) {
   const index = {};
@@ -64,16 +69,31 @@ export function parseUnitAwardsRows(rows) {
     if (catalog) colIdxs.push({ c, catalog });
   }
   for (const { c, catalog } of colIdxs) {
-    const units = index[catalog] || (index[catalog] = []);
+    const byKey = new Map();
     for (let r = 2; r < rows.length; r++) {
       const unit = stripUnitAwardCell(rows[r]?.[c]);
       if (!unit) continue;
-      if (!units.some((u) => normalizeUnitKey(u) === normalizeUnitKey(unit))) {
-        units.push(unit);
+      const key = normalizeUnitKey(unit);
+      if (!key) continue;
+      const prev = byKey.get(key);
+      if (prev) {
+        prev.count += 1;
+      } else {
+        byKey.set(key, { name: canonicalUnitLabel(unit), count: 1 });
       }
     }
+    index[catalog] = [...byKey.values()];
   }
   return index;
+}
+
+function entryName(entry) {
+  return typeof entry === "string" ? entry : entry?.name;
+}
+
+function entryCount(entry) {
+  if (typeof entry === "string") return 1;
+  return Math.max(1, Number(entry?.count) || 1);
 }
 
 /** True if any segment of the user's unit path matches a sheet unit label. */
@@ -86,7 +106,6 @@ export function unitPathMatchesSheetUnit(unitPath, sheetUnitName) {
   const candidates = [...segments, full];
   for (const seg of candidates) {
     if (seg === target) return true;
-    // Prefer longer overlap to avoid "1st" style false positives
     if (seg.length >= 5 && target.length >= 5 && (seg.includes(target) || target.includes(seg))) {
       return true;
     }
@@ -94,13 +113,21 @@ export function unitPathMatchesSheetUnit(unitPath, sheetUnitName) {
   return false;
 }
 
+export function formatUnitCitationName(awardName, count) {
+  const n = Math.max(1, Number(count) || 1);
+  return n >= 2 ? `${awardName} x${n}` : awardName;
+}
+
 export function unitCitationsForPath(unitPath, unitAwardsIndex) {
   if (!unitPath?.length || !unitAwardsIndex) return [];
   const out = [];
   for (const [awardName, units] of Object.entries(unitAwardsIndex)) {
-    if (units.some((u) => unitPathMatchesSheetUnit(unitPath, u))) {
-      out.push({ category: "unit", name: awardName });
-    }
+    const hit = (units || []).find((u) => unitPathMatchesSheetUnit(unitPath, entryName(u)));
+    if (!hit) continue;
+    out.push({
+      category: "unit",
+      name: formatUnitCitationName(awardName, entryCount(hit)),
+    });
   }
   return out;
 }

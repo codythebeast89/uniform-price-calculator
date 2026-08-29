@@ -1113,7 +1113,12 @@
     }
 
     function awardMatchesCatalogItem(awardName, itemName) {
-      const strip = (s) => normalizeAwardKey(String(s || "").replace(/\([^)]*\)/g, " "));
+      const strip = (s) =>
+        normalizeAwardKey(
+          String(s || "")
+            .replace(/\([^)]*\)/g, " ")
+            .replace(/\s+x\d+\s*$/i, " "),
+        );
       let a = strip(awardName);
       let i = strip(itemName);
       if (a === i) return true;
