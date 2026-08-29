@@ -441,8 +441,8 @@
           <label>Nametape
             <input type="text" id="fNametape" placeholder="LASTNAME">
           </label>
-          <label>Robux Proof Sent To
-            <input type="text" id="fProof" placeholder="LC username">
+          <label>Robux Proof Sent To (Discord ID)
+            <input type="text" id="fProof" placeholder="Discord user ID or @name" autocomplete="off">
           </label>
         </div>
         <label>Current Division / Brigade / Company
@@ -1913,7 +1913,7 @@ ${misc.length ? `\n**Misc:** ${misc.join(", ")}\n` : ""}
 **Nametape:** ${fNametape.value || ""}
 **Offset:** ${offsetParts.length ? offsetParts.join(", ") : "None"}
 ${priceLine}
-**Robux Proof Sent to:** @${fProof.value || "[LC]"}`;
+**Robux Proof Sent to:** <@${fProof.value || "[Discord ID]"}>`;
     }
 
 
@@ -2003,6 +2003,8 @@ ${priceLine}
       if (earnedAwardKeys.has(key)) return true;
       // allow free default ribbons always when logged in
       if (FREE_DEFAULT_RIBBONS.some((r) => normalizeAwardKey(r) === key)) return true;
+      // MP / CID ID badges: unlock from Roblox group, not the awards sheet
+      if (awardUnlockedByUnit(itemName)) return true;
       // Unit citations must be earned when logged in
       if (UNIT_CITATION_NAMES.has(itemName)) {
         return authProfile?.awards?.some((a) => awardMatchesCatalogItem(a.name, itemName)) || false;
@@ -2067,6 +2069,29 @@ ${priceLine}
     /** Prefer the form dropdown so enlisted can test / officers can correct profile. */
     function currentPaygrade() {
       return (fPaygrade.value || authProfile?.usar?.paygrade || "").trim();
+    }
+
+    /** Roblox group IDs tracked as Military Police Corps (see server profile.mjs). */
+    const MPC_ROBLOX_GROUP_IDS = new Set([4929233, 33438975, 8124498, 7076400, 15531002]);
+    const CID_ROBLOX_GROUP_ID = 33438975;
+
+    function profileInMpc() {
+      if (!authProfile) return false;
+      if (authProfile.unit?.path?.[0] === "Military Police Corps") return true;
+      return (authProfile.groups || []).some((g) => MPC_ROBLOX_GROUP_IDS.has(Number(g.groupId)));
+    }
+
+    function profileInCid() {
+      if (!authProfile) return false;
+      if ((authProfile.unit?.path || []).includes("Criminal Investigations Division")) return true;
+      return (authProfile.groups || []).some((g) => Number(g.groupId) === CID_ROBLOX_GROUP_ID);
+    }
+
+    /** ID badges not on the QMC sheet — unlocked by Roblox command / group. */
+    function awardUnlockedByUnit(itemName) {
+      if (itemName === "Military Police Identification Badge") return profileInMpc();
+      if (itemName === "Criminal Investigation Division Identification Badge") return profileInCid();
+      return false;
     }
 
     function applyAwardLocks() {
@@ -2154,19 +2179,21 @@ ${priceLine}
     }
 
     function applyEarnedAwardsToForm(profile) {
-      if (!profile?.awards?.length) return;
+      if (!profile?.awards?.length && !profileInMpc() && !profileInCid()) return;
       rebuildEarnedDisplayMap(profile);
 
       document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
         if (box.disabled) return;
         const itemName = box.value;
         if (itemName === "Aviator Badge" && !isOfficerPaygrade(currentPaygrade())) return;
-        const match = profile.awards.find((a) => awardMatchesCatalogItem(a.name, itemName));
-        if (!match) return;
+
+        const match = profile?.awards?.find((a) => awardMatchesCatalogItem(a.name, itemName));
+        const unitUnlock = awardUnlockedByUnit(itemName);
+        if (!match && !unitUnlock) return;
 
         box.checked = true;
 
-        if (COMBAT_BADGE_AWARDS.has(itemName)) {
+        if (match && COMBAT_BADGE_AWARDS.has(itemName)) {
           const count = parseSheetAwardCount(match.name);
           const awardCount = box.parentElement.querySelector(".award-count-select");
           if (awardCount) {
@@ -2186,7 +2213,7 @@ ${priceLine}
 
         // Tiered badges: sheet "Master Aviator Badge" → select Master
         const tierSelect = box.parentElement.querySelector(".tier-select");
-        if (tierSelect && TIERED_BADGES[itemName]) {
+        if (match && tierSelect && TIERED_BADGES[itemName]) {
           const lower = match.name.toLowerCase();
           const tiers = TIERED_BADGES[itemName];
           const hit = tiers.find((t) => lower.includes(t.toLowerCase()));
