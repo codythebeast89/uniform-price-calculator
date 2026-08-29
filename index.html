@@ -196,7 +196,8 @@
     }
 
     .tier-select,
-    .award-count-select {
+    .award-count-select,
+    .csib-unit-select {
       margin-left: auto;
       padding: 4px 8px;
       border-radius: 6px;
@@ -204,10 +205,12 @@
       background: #1f2937;
       color: white;
       font-size: 12px;
+      max-width: 220px;
     }
 
     .tier-select:disabled,
-    .award-count-select:disabled {
+    .award-count-select:disabled,
+    .csib-unit-select:disabled {
       opacity: 0.45;
     }
 
@@ -794,6 +797,17 @@
         accessories: [],
       },
 
+      "Rolled ASOC Blackouts": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: OCP_STYLE_TABS_CSIB,
+        foreignRibbons: [],
+        foreignBadges: [],
+        accessories: [
+          item("Watch"),
+        ],
+      },
+
       "Army Fleece (Winter)": {
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
@@ -874,7 +888,15 @@
         ],
       },
 
-      "Class B Long Sleeve (LS)": {
+      "Class B Long Sleeve (No Tie)": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ...CLASS_B_SHARED,
+        accessories: [
+          FREE_RDI,
+        ],
+      },
+
+      "Class B Long Sleeve (With Tie)": {
         basePrice: BASE_UNIFORM_PRICE,
         ...CLASS_B_SHARED,
         accessories: [
@@ -904,7 +926,12 @@
         ...CLASS_C_SHARED,
       },
 
-      "Class C Long Sleeve": {
+      "Class C Long Sleeve (No Tie)": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ...CLASS_C_SHARED,
+      },
+
+      "Class C Long Sleeve (With Tie)": {
         basePrice: BASE_UNIFORM_PRICE,
         ...CLASS_C_SHARED,
       },
@@ -1024,6 +1051,48 @@
       return String(name || "").replace(/\s*\(\d+(?:st|nd|rd|th)\s+Award\)\s*/gi, "").trim();
     }
 
+    /** Sheet award counts → xN for templates. Keeps devices like ("C"). */
+    function formatAwardForTemplate(name) {
+      return String(name || "")
+        .replace(/\s*\((\d+)(?:st|nd|rd|th)\s+Award\)\s*/gi, (_, n) => (Number(n) >= 2 ? ` x${n}` : ""))
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function awardMatchesCatalogItem(awardName, itemName) {
+      const strip = (s) => normalizeAwardKey(String(s || "").replace(/\([^)]*\)/g, " "));
+      let a = strip(awardName);
+      let i = strip(itemName);
+      if (a === i) return true;
+      if (a.replace(/ badges$/, " badge") === i) return true;
+      if (i === "combat service identification badge" && a.startsWith("combat service identification badge")) return true;
+      if (i === "driver and mechanic badge" && a.startsWith("driver and mechanic badge")) return true;
+      return false;
+    }
+
+    function parseCsibUnitsFromAwards(awards) {
+      const units = [];
+      for (const award of awards || []) {
+        if (!awardMatchesCatalogItem(award.name, "Combat Service Identification Badge")) continue;
+        const m = String(award.name).match(/\((.+)\)\s*$/);
+        if (!m) {
+          if (!units.includes("CSIB")) units.push("CSIB");
+          continue;
+        }
+        const inner = m[1].replace(/\s*CSIB\s*$/i, "").trim();
+        for (const part of inner.split(",")) {
+          const u = part.trim().replace(/\s*CSIB\s*$/i, "").trim();
+          if (u && !units.includes(u)) units.push(u);
+        }
+      }
+      return units;
+    }
+
+    const COMMON_CSIB_UNITS = [
+      "1ID", "1CAV", "1AD", "75th", "82nd", "101st", "ASF", "ASOC", "SOAR",
+      "NATO", "FORSCOM", "MATCOM", "SPACECOM", "11th", "16th",
+    ];
+
     const TAB_NAMES = new Set([
       "Ranger Tab", "Special Forces Tab", "Sapper Tab", "Jungle Tab", "Arctic Tab", "President's Hundred Tab",
     ]);
@@ -1061,6 +1130,10 @@
         maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
         rules: "Skill Tabs max 2 · CSIB authorized · No watch, ribbons, skill badges, or ID badges",
       },
+      "Rolled ASOC Blackouts": {
+        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
+        rules: "Skill Tabs max 2 · CSIB · Watch if rolled · No skill badges or ribbons",
+      },
       "Army Fleece (Winter)": {
         maxTabs: 0, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
         rules: "Ranktab & Nametape only",
@@ -1096,10 +1169,15 @@
         maxForeign: 0, maxRibbons: 6,
         rules: "SS with tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized · RDI free",
       },
-      "Class B Long Sleeve (LS)": {
+      "Class B Long Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
         maxForeign: 0, maxRibbons: 6,
-        rules: "Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · RDI free · No watch",
+        rules: "LS no tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · RDI free · No watch",
+      },
+      "Class B Long Sleeve (With Tie)": {
+        maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
+        maxForeign: 0, maxRibbons: 6,
+        rules: "LS with tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · RDI free · No watch",
       },
       "Class B Sweater (Winter)": {
         maxTabs: 0, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
@@ -1115,18 +1193,23 @@
         maxForeign: 0, maxRibbons: null, idRequiresNoCsib: true,
         rules: "SS with tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · RDI / unit citations free",
       },
-      "Class C Long Sleeve": {
+      "Class C Long Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
         maxForeign: 0, maxRibbons: null, idRequiresNoCsib: true,
-        rules: "LS · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · RDI / unit citations free",
+        rules: "LS no tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · RDI / unit citations free",
+      },
+      "Class C Long Sleeve (With Tie)": {
+        maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
+        maxForeign: 0, maxRibbons: null, idRequiresNoCsib: true,
+        rules: "LS with tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · RDI / unit citations free",
       },
       "ICVC — Tanker": {
         maxTabs: 0, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
         rules: "Nametape & Ranktab only (free)",
       },
       "ICVC — Pilot": {
-        maxTabs: 0, maxSkillBadges: 2, comboGroups: [[3]], maxIdBadges: 0, maxForeign: 0, aviatorOnly: true,
-        rules: "Nametape & Ranktab free · Aviator / Aviation (incl. Master tiers) and Army Astronaut Device",
+        maxTabs: 0, maxSkillBadges: 2, maxIdBadges: 0, maxForeign: 0, aviatorOnly: true,
+        rules: "Nametape & Ranktab free · Aviator / Aviation (Basic–Master) and Army Astronaut Device",
       },
     };
 
@@ -1390,15 +1473,23 @@ const UNIT_TREE = [
     wireDivision();
 
     function classifyBadge(name) {
-      if (name === "Combat Service Identification Badge") return "csib";
-      if (TAB_NAMES.has(name)) return "tab";
-      if (ID_BADGE_NAMES.has(name)) return "id";
-      if (name === "Service Stripe" || name === "Overseas Bar") return "service";
-      if (BADGE_GROUP[name]) return "skill";
+      const core = String(name || "")
+        .replace(/ \([^)]+\)$/, "")
+        .replace(/ x\d+$/i, "")
+        .replace(/ Badges$/i, " Badge")
+        .trim();
+      if (core === "Combat Service Identification Badge" || /\bCSIB\b/i.test(name)) return "csib";
+      if (TAB_NAMES.has(core)) return "tab";
+      if (ID_BADGE_NAMES.has(core)) return "id";
+      if (core === "Service Stripe" || core === "Overseas Bar") return "service";
+      if (BADGE_GROUP[core] || BADGE_GROUP[name]) return "skill";
       return "other";
     }
 
-    function displayBadgeName(name, tierSelect, awardSelect) {
+    function displayBadgeName(name, tierSelect, awardSelect, csibSelect) {
+      if (earnedDisplayByItem.has(name) && name !== "Combat Service Identification Badge") {
+        return formatAwardForTemplate(earnedDisplayByItem.get(name));
+      }
       let out = name;
       if (tierSelect && !tierSelect.disabled && tierSelect.value) {
         out = `${name} (${tierSelect.value})`;
@@ -1407,7 +1498,36 @@ const UNIT_TREE = [
         const n = Number(awardSelect.value);
         if (n >= 2) out = `${out} x${n}`;
       }
+      if (name === "Combat Service Identification Badge" && csibSelect && !csibSelect.disabled && csibSelect.value) {
+        out = `${name} (${csibSelect.value} CSIB)`;
+      }
       return out;
+    }
+
+    function displayRibbonName(name) {
+      if (earnedDisplayByItem.has(name)) {
+        return formatAwardForTemplate(earnedDisplayByItem.get(name));
+      }
+      return name;
+    }
+
+    function populateCsibSelect(select) {
+      const earnedUnits = parseCsibUnitsFromAwards(authProfile?.awards || []);
+      const units = earnedUnits.length ? earnedUnits : COMMON_CSIB_UNITS;
+      const prev = select.value;
+      select.innerHTML = "";
+      const blank = document.createElement("option");
+      blank.value = "";
+      blank.textContent = earnedUnits.length ? "Select your CSIB" : "Select CSIB unit";
+      select.appendChild(blank);
+      units.forEach((unit) => {
+        const opt = document.createElement("option");
+        opt.value = unit;
+        opt.textContent = `${unit} CSIB`;
+        select.appendChild(opt);
+      });
+      if (prev && units.includes(prev)) select.value = prev;
+      else if (earnedUnits.length === 1) select.value = earnedUnits[0];
     }
 
     function createCheckboxes(container, items, type) {
@@ -1418,6 +1538,7 @@ const UNIT_TREE = [
         const itemPrice = typeof entry === "string" ? DEFAULT_PRICE : entry.price;
         const tiers = TIERED_BADGES[itemName];
         const combatAwards = COMBAT_BADGE_AWARDS.has(itemName);
+        const isCsib = itemName === "Combat Service Identification Badge";
 
         const label = document.createElement("label");
         const checkbox = document.createElement("input");
@@ -1461,6 +1582,17 @@ const UNIT_TREE = [
           checkbox.addEventListener("change", () => {
             select.disabled = !checkbox.checked;
             if (itemName.startsWith("Master Combat")) applyAwardLocks();
+            updateCalculator();
+          });
+          select.addEventListener("change", updateCalculator);
+          label.appendChild(select);
+        } else if (isCsib) {
+          const select = document.createElement("select");
+          select.className = "csib-unit-select";
+          select.disabled = true;
+          populateCsibSelect(select);
+          checkbox.addEventListener("change", () => {
+            select.disabled = !checkbox.checked;
             updateCalculator();
           });
           select.addEventListener("change", updateCalculator);
@@ -1537,8 +1669,12 @@ const UNIT_TREE = [
         total += Number(box.dataset.price);
         const tier = box.parentElement.querySelector(".tier-select");
         const awardCount = box.parentElement.querySelector(".award-count-select");
-        const name = displayBadgeName(box.value, tier, awardCount);
-        selected[box.dataset.type].push(name);
+        const csibSelect = box.parentElement.querySelector(".csib-unit-select");
+        const kind = box.dataset.type;
+        const name = kind === "Ribbons" || kind === "Foreign Ribbons"
+          ? displayRibbonName(box.value)
+          : displayBadgeName(box.value, tier, awardCount, csibSelect);
+        selected[kind].push(name);
       });
 
       const discount = Math.min(Number(fDiscAmt.value) || 0, total);
@@ -1553,14 +1689,18 @@ const UNIT_TREE = [
       const limits = UNIFORM_LIMITS[key];
       if (!limits) return issues;
 
-      const badges = selected.Badges.map(n => n.replace(/ \([^)]+\)$/, ""));
+      const badges = selected.Badges.map(n => n.replace(/ \([^)]+\)$/, "").replace(/ x\d+$/i, "").trim());
       const tabs = badges.filter(n => classifyBadge(n) === "tab");
       const skill = badges.filter(n => classifyBadge(n) === "skill");
       const ids = badges.filter(n => classifyBadge(n) === "id");
-      const hasCsib = badges.includes("Combat Service Identification Badge");
+      const hasCsib = selected.Badges.some((n) =>
+        /^Combat Service Identification Badge\b/i.test(n) || /\bCSIB\b/i.test(n),
+      );
       const foreignCount = selected["Foreign Ribbons"].length + selected["Foreign Badges"].length;
       // Class B: treat ribbons excluding free defaults for max? Console counts selectable only.
-      const ribbonCount = selected.Ribbons.filter(r => !FREE_DEFAULT_RIBBONS.includes(r)).length;
+      const ribbonCount = selected.Ribbons.filter(r =>
+        !FREE_DEFAULT_RIBBONS.some((f) => r === f || r.startsWith(f + " ") || r.startsWith(f + " (") || r.startsWith(f + " x")),
+      ).length;
 
       if (limits.maxTabs != null && tabs.length > limits.maxTabs) {
         issues.push(`Skill Tabs: ${tabs.length}/${limits.maxTabs} — exceeds max.`);
@@ -1643,7 +1783,7 @@ const UNIT_TREE = [
         ? [
             ...FREE_DEFAULT_RIBBONS.map(r => `* ${r}`),
             ...selected.Ribbons
-              .filter(r => !FREE_DEFAULT_RIBBONS.includes(r))
+              .filter(r => !FREE_DEFAULT_RIBBONS.some((f) => r === f || r.startsWith(f + " ") || r.startsWith(f + " (") || r.startsWith(f + " x")))
               .map(r => `* ${r}`),
           ].join("\n")
         : (selected.Ribbons.length
@@ -1695,6 +1835,8 @@ ${priceLine}
     let API_BASE = ""; // loaded from api-config.json, or same-origin when hosted on Imperial
     let authProfile = null;
     let earnedAwardKeys = null; // Set of normalized names when logged in
+    /** checkbox item name → full sheet award string for template (devices, xN, classes). */
+    let earnedDisplayByItem = new Map();
 
     function getToken() {
       return localStorage.getItem(TOKEN_KEY) || "";
@@ -1774,6 +1916,10 @@ ${priceLine}
       // allow free default ribbons always when logged in
       if (FREE_DEFAULT_RIBBONS.some((r) => normalizeAwardKey(r) === key)) return true;
 
+      if (authProfile?.awards?.some((a) => awardMatchesCatalogItem(a.name, itemName))) {
+        return true;
+      }
+
       // CAB/CMB/CIB Master vs base must match exactly (sheet MC → Master … Badge)
       const combatBase = key.replace(/^master /, "");
       if (
@@ -1834,6 +1980,8 @@ ${priceLine}
             awardCount.value = "1";
             awardCount.disabled = true;
           }
+          const csibSelect = label.querySelector(".csib-unit-select");
+          if (csibSelect) csibSelect.disabled = true;
         } else {
           box.disabled = false;
           label.classList.remove("locked-out");
@@ -1841,25 +1989,78 @@ ${priceLine}
       });
     }
 
-    function applyEarnedCombatBadgeStars(profile) {
+    function rebuildEarnedDisplayMap(profile) {
+      earnedDisplayByItem = new Map();
       if (!profile?.awards?.length) return;
+      const catalogNames = new Set();
+      Object.values(uniformData).forEach((u) => {
+        [...(u.ribbons || []), ...(u.badges || []), ...(u.foreignRibbons || []), ...(u.foreignBadges || [])]
+          .forEach((entry) => catalogNames.add(typeof entry === "string" ? entry : entry.name));
+      });
+      // Always include known singles used across uniforms
+      [
+        "Combat Service Identification Badge",
+        "Driver and Mechanic Badge",
+        ...Object.keys(TIERED_BADGES),
+        ...COMBAT_BADGE_AWARDS,
+      ].forEach((n) => catalogNames.add(n));
+
       for (const award of profile.awards) {
-        if (award.category !== "badges") continue;
-        const core = combatBadgeCoreName(award.name);
-        if (!COMBAT_BADGE_AWARDS.has(core)) continue;
-        const count = parseSheetAwardCount(award.name);
-        const box = document.querySelector(
-          `input[type='checkbox'][data-type='Badges'][value="${CSS.escape(core)}"]`,
-        );
-        if (!box || box.disabled) continue;
-        box.checked = true;
-        const awardCount = box.parentElement.querySelector(".award-count-select");
-        if (awardCount) {
-          const max = Number(awardCount.options[awardCount.options.length - 1].value);
-          awardCount.value = String(Math.min(Math.max(count, 1), max));
-          awardCount.disabled = false;
+        for (const itemName of catalogNames) {
+          if (!awardMatchesCatalogItem(award.name, itemName)) continue;
+          // Prefer the most detailed sheet string (devices / counts / classes)
+          const prev = earnedDisplayByItem.get(itemName);
+          if (!prev || award.name.length >= prev.length) {
+            earnedDisplayByItem.set(itemName, award.name);
+          }
         }
       }
+    }
+
+    function applyEarnedAwardsToForm(profile) {
+      if (!profile?.awards?.length) return;
+      rebuildEarnedDisplayMap(profile);
+
+      document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
+        if (box.disabled) return;
+        const itemName = box.value;
+        const match = profile.awards.find((a) => awardMatchesCatalogItem(a.name, itemName));
+        if (!match) return;
+
+        box.checked = true;
+
+        if (COMBAT_BADGE_AWARDS.has(itemName)) {
+          const count = parseSheetAwardCount(match.name);
+          const awardCount = box.parentElement.querySelector(".award-count-select");
+          if (awardCount) {
+            const max = Number(awardCount.options[awardCount.options.length - 1].value);
+            awardCount.value = String(Math.min(Math.max(count, 1), max));
+            awardCount.disabled = false;
+          }
+        }
+
+        if (itemName === "Combat Service Identification Badge") {
+          const csibSelect = box.parentElement.querySelector(".csib-unit-select");
+          if (csibSelect) {
+            populateCsibSelect(csibSelect);
+            csibSelect.disabled = false;
+          }
+        }
+
+        // Tiered badges: sheet "Master Aviator Badge" → select Master
+        const tierSelect = box.parentElement.querySelector(".tier-select");
+        if (tierSelect && TIERED_BADGES[itemName]) {
+          const lower = match.name.toLowerCase();
+          const tiers = TIERED_BADGES[itemName];
+          const hit = tiers.find((t) => lower.includes(t.toLowerCase()));
+          if (hit) tierSelect.value = hit;
+          else if (/master/.test(lower)) {
+            const master = tiers.find((t) => /master/i.test(t));
+            if (master) tierSelect.value = master;
+          }
+          tierSelect.disabled = false;
+        }
+      });
     }
 
     function applyProfileToForm(profile) {
@@ -1880,7 +2081,8 @@ ${priceLine}
       if (profile.unit?.positionLabel && !fNametape.value) {
         // surface HQ position in template via nametape hint only if empty — skip
       }
-      applyEarnedCombatBadgeStars(profile);
+      applyAwardLocks();
+      applyEarnedAwardsToForm(profile);
       applyAwardLocks();
     }
 
@@ -1924,6 +2126,7 @@ ${priceLine}
         setToken("");
         authProfile = null;
         earnedAwardKeys = null;
+        earnedDisplayByItem = new Map();
         renderAuthBar(null);
         // Re-enable all award checkboxes
         document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
@@ -1933,6 +2136,11 @@ ${priceLine}
           if (awardCount) {
             awardCount.value = "1";
             awardCount.disabled = !box.checked;
+          }
+          const csibSelect = box.parentElement.querySelector(".csib-unit-select");
+          if (csibSelect) {
+            populateCsibSelect(csibSelect);
+            csibSelect.disabled = !box.checked;
           }
         });
         updateCalculator();
@@ -1975,7 +2183,7 @@ ${priceLine}
     createCheckboxes = function(container, items, type) {
       _origCreateCheckboxes(container, items, type);
       applyAwardLocks();
-      if (authProfile) applyEarnedCombatBadgeStars(authProfile);
+      if (authProfile) applyEarnedAwardsToForm(authProfile);
     };
 
     loadAuthProfile();
