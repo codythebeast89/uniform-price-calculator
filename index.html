@@ -2087,10 +2087,32 @@ ${priceLine}
       return (authProfile.groups || []).some((g) => Number(g.groupId) === CID_ROBLOX_GROUP_ID);
     }
 
-    /** ID badges not on the QMC sheet — unlocked by Roblox command / group. */
+    /** USAR HQ roles that authorize Army Staff / Joint Chiefs ID badges. */
+    const USAR_STAFF_ROLE_RE =
+      /\b(SMA|DAS|VCSA|CSA|CJCS)\b|Sergeant Major of the Army|Director of the Army Staff|Vice Chief of Staff(?: of the Army)?|Chief of Staff(?: of the Army)?|Chairman(?: of)?(?: the)? Joint Chiefs/i;
+
+    function profileHasUsarStaffRole() {
+      if (!authProfile?.usar) return false;
+      const role = [
+        authProfile.usar.roleName,
+        authProfile.usar.rankName,
+        authProfile.usar.paygrade === "E9C" ? "SMA" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      return USAR_STAFF_ROLE_RE.test(role);
+    }
+
+    /** ID badges not on the QMC sheet — unlocked by Roblox command / USAR role. */
     function awardUnlockedByUnit(itemName) {
       if (itemName === "Military Police Identification Badge") return profileInMpc();
       if (itemName === "Criminal Investigation Division Identification Badge") return profileInCid();
+      if (
+        itemName === "Army Staff Identification Badge" ||
+        itemName === "Joint Chiefs Identification Badge"
+      ) {
+        return profileHasUsarStaffRole();
+      }
       return false;
     }
 
@@ -2179,7 +2201,7 @@ ${priceLine}
     }
 
     function applyEarnedAwardsToForm(profile) {
-      if (!profile?.awards?.length && !profileInMpc() && !profileInCid()) return;
+      if (!profile?.awards?.length && !profileInMpc() && !profileInCid() && !profileHasUsarStaffRole()) return;
       rebuildEarnedDisplayMap(profile);
 
       document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
