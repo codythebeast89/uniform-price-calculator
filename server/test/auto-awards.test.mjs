@@ -9,6 +9,8 @@ import {
 
 describe("auto-awards", () => {
   it("parses enlisted grades with letter suffixes", () => {
+    assert.equal(completedBasicTraining("[O1] Second Lieutenant"), true);
+    assert.equal(isUsarE2OrHigher("[E2] Private Second Class"), true);
     assert.equal(completedBasicTraining("[E4A] Specialist"), true);
     assert.equal(completedBasicTraining("[E9B] Command Sergeant Major"), true);
     assert.equal(completedBasicTraining("[E1] Private"), false);

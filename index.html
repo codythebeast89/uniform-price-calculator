@@ -1878,27 +1878,28 @@ const UNIT_TREE = [
         copyButton.title = "";
       }
 
-      const badgeLines = selected.Badges.length
-        ? selected.Badges.map(item => `* ${item}`).join("\n")
+      const allBadges = [...selected.Badges, ...selected["Foreign Badges"]];
+      const badgeLines = allBadges.length
+        ? allBadges.map(item => `* ${item}`).join("\n")
         : "* None";
 
       const supportsRibbons = Boolean(selectedUniform?.ribbons?.length);
+      const foreignRibbons = selected["Foreign Ribbons"] || [];
+      const selectableRibbons = selected.Ribbons.filter(r =>
+        !FREE_DEFAULT_RIBBONS.some((f) => r === f || r.startsWith(f + " ") || r.startsWith(f + " (") || r.startsWith(f + " x")),
+      );
       const ribbonLines = supportsRibbons
         ? [
             ...FREE_DEFAULT_RIBBONS.map(r => `* ${r}`),
-            ...selected.Ribbons
-              .filter(r => !FREE_DEFAULT_RIBBONS.some((f) => r === f || r.startsWith(f + " ") || r.startsWith(f + " (") || r.startsWith(f + " x")))
-              .map(r => `* ${r}`),
+            ...selectableRibbons.map(r => `* ${r}`),
+            ...foreignRibbons.map(r => `* ${r}`),
           ].join("\n")
-        : (selected.Ribbons.length
-            ? selected.Ribbons.map(r => `* ${r}`).join("\n")
+        : ([...selected.Ribbons, ...foreignRibbons].length
+            ? [...selected.Ribbons, ...foreignRibbons].map(r => `* ${r}`).join("\n")
             : "* None");
 
-      const misc = [
-        ...selected.Accessories,
-        ...selected["Foreign Ribbons"],
-        ...selected["Foreign Badges"],
-      ];
+      // Accessories only — foreign awards are listed under Badges / Ribbons above.
+      const misc = [...selected.Accessories];
 
       const offsetParts = [];
       if (selected.Accessories.includes("Ribbon Offset")) offsetParts.push("Ribbon");
