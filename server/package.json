@@ -1,0 +1,18 @@
+{
+  "name": "qmc-calc-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone Roblox OAuth + awards API for the QMC uniform price calculator (Imperial / Caddy)",
+  "main": "src/server.mjs",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "jose": "^6.0.11"
+  }
+}

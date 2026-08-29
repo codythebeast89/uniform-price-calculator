@@ -250,6 +250,75 @@
         grid-template-columns: 1fr;
       }
     }
+
+    .auth-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 0 auto 24px;
+      max-width: 1100px;
+      padding: 12px 16px;
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+    }
+
+    .auth-bar .auth-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #d1d5db;
+    }
+
+    .auth-bar img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #1f2937;
+    }
+
+    .auth-bar .auth-meta {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .auth-bar a.button-link,
+    .auth-bar button.auth-btn {
+      width: auto;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .auth-bar a.button-link.secondary,
+    .auth-bar button.auth-btn.secondary {
+      background: #374151;
+    }
+
+    .auth-error {
+      max-width: 1100px;
+      margin: 0 auto 16px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #7f1d1d;
+      color: #fecaca;
+      font-size: 13px;
+    }
+
+    label.locked-out {
+      opacity: 0.4;
+    }
+
   </style>
 </head>
 <body>
@@ -265,6 +334,18 @@
   <div id="appContent" class="hidden">
 
   <h1>USAR Quartermaster Corps Uniform Price Calculator</h1>
+
+  <div id="authError" class="auth-error hidden"></div>
+  <div class="auth-bar" id="authBar">
+    <div class="auth-user" id="authUser">
+      <span>Not logged in — awards stay open for manual pricing.</span>
+    </div>
+    <div>
+      <a class="button-link" id="loginBtn" href="/api/auth/roblox">Log in with Roblox</a>
+      <a class="button-link secondary hidden" id="logoutBtn" href="/api/auth/logout">Log out</a>
+    </div>
+  </div>
+
 
 <div class="container">
 
@@ -1450,6 +1531,151 @@ ${misc.length ? `\n**Misc:** ${misc.join(", ")}\n` : ""}
 ${priceLine}
 **Robux Proof Sent to:** @${fProof.value || "[LC]"}`;
     }
+
+
+    // ---- Roblox auth + earned awards lock ----
+    let authProfile = null;
+    let earnedAwardKeys = null; // Set of normalized names when logged in
+
+    function normalizeAwardKey(name) {
+      return String(name || "")
+        .toLowerCase()
+        .replace(/["""']/g, "")
+        .replace(/\([^)]*\)/g, " ")
+        .replace(/\b(military\s+)?ribbon\b/g, " ")
+        .replace(/\bmedal\b/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function showAuthErrorFromQuery() {
+      const params = new URLSearchParams(location.search);
+      const err = params.get("auth_error");
+      if (!err) return;
+      const messages = {
+        invalid_state: "Login failed (invalid state). Try again.",
+        account_too_new: "Roblox account must be at least 30 days old.",
+        under_age: "You must be 13 or older to log in.",
+        not_in_usar: "You must be a member of USAR to log in.",
+        server_error: "Login failed on the server. Try again later.",
+      };
+      const box = document.getElementById("authError");
+      box.textContent = messages[err] || `Login error: ${err}`;
+      box.classList.remove("hidden");
+      history.replaceState({}, "", location.pathname);
+    }
+
+    function awardIsEarned(itemName) {
+      if (!earnedAwardKeys) return true;
+      const key = normalizeAwardKey(itemName);
+      if (earnedAwardKeys.has(key)) return true;
+      // allow free default ribbons always when logged in
+      if (FREE_DEFAULT_RIBBONS.some((r) => normalizeAwardKey(r) === key)) return true;
+      // tiered: "Aviator Badge (Master)" vs sheet "Master Aviator Badge" / base name
+      for (const earned of earnedAwardKeys) {
+        if (key.includes(earned) || earned.includes(key)) return true;
+      }
+      return false;
+    }
+
+    function applyAwardLocks() {
+      document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
+        const type = box.dataset.type;
+        if (!["Ribbons", "Badges", "Foreign Ribbons", "Foreign Badges"].includes(type)) return;
+        const label = box.parentElement;
+        const earned = awardIsEarned(box.value);
+        if (earnedAwardKeys && !earned) {
+          box.checked = false;
+          box.disabled = true;
+          label.classList.add("locked-out");
+          const tier = label.querySelector(".tier-select");
+          if (tier) tier.disabled = true;
+        } else {
+          box.disabled = false;
+          label.classList.remove("locked-out");
+        }
+      });
+    }
+
+    function applyProfileToForm(profile) {
+      if (!profile) return;
+      if (profile.username) {
+        fName.value = profile.username;
+      }
+      if (profile.usar?.paygrade) {
+        fPaygrade.value = profile.usar.paygrade;
+        fRank.value = RANK_NAMES[profile.usar.paygrade] || profile.usar.rankName || "";
+      } else if (profile.usar?.rankName) {
+        fRank.value = profile.usar.rankName;
+      }
+      if (profile.unit?.path?.length) {
+        divisionPath = [...profile.unit.path];
+        wireDivision();
+      }
+      if (profile.unit?.positionLabel && !fNametape.value) {
+        // surface HQ position in template via nametape hint only if empty — skip
+      }
+    }
+
+    function renderAuthBar(profile) {
+      const userEl = document.getElementById("authUser");
+      const loginBtn = document.getElementById("loginBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+      if (!profile) {
+        userEl.innerHTML = "<span>Not logged in — awards stay open for manual pricing.</span>";
+        loginBtn.classList.remove("hidden");
+        logoutBtn.classList.add("hidden");
+        return;
+      }
+      const unitBits = [];
+      if (profile.unit?.pathLabel) unitBits.push(profile.unit.pathLabel);
+      if (profile.unit?.positionLabel) unitBits.push(profile.unit.positionLabel);
+      const rank = profile.usar
+        ? `${profile.usar.paygrade || ""} ${profile.usar.rankName || profile.usar.roleName || ""}`.trim()
+        : "USAR rank unknown";
+      userEl.innerHTML =
+        (profile.avatarUrl ? `<img src="${profile.avatarUrl}" alt="">` : "") +
+        `<div><div><strong>${profile.username}</strong></div>` +
+        `<div class="auth-meta">${rank}${unitBits.length ? " · " + unitBits.join(" · ") : ""}</div>` +
+        `<div class="auth-meta">${(profile.awards || []).length} awards loaded from QMC database</div></div>`;
+      loginBtn.classList.add("hidden");
+      logoutBtn.classList.remove("hidden");
+    }
+
+    async function loadAuthProfile() {
+      showAuthErrorFromQuery();
+      try {
+        const res = await fetch("/api/me", { credentials: "same-origin" });
+        if (res.status === 401) {
+          authProfile = null;
+          earnedAwardKeys = null;
+          renderAuthBar(null);
+          return;
+        }
+        if (!res.ok) throw new Error("me failed");
+        authProfile = await res.json();
+        earnedAwardKeys = new Set(
+          (authProfile.awards || []).map((a) => normalizeAwardKey(a.name)),
+        );
+        renderAuthBar(authProfile);
+        applyProfileToForm(authProfile);
+        applyAwardLocks();
+        updateCalculator();
+      } catch (err) {
+        // Static GitHub Pages / no API — silent
+        console.warn("Auth API unavailable", err);
+        renderAuthBar(null);
+      }
+    }
+
+    const _origCreateCheckboxes = createCheckboxes;
+    createCheckboxes = function(container, items, type) {
+      _origCreateCheckboxes(container, items, type);
+      applyAwardLocks();
+    };
+
+    loadAuthProfile();
+
 
     updateCalculator();
 
