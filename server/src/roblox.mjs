@@ -84,7 +84,12 @@ export async function fetchBirthdate(accessToken) {
 
 export function isAtLeast13(birthdate) {
   if (!birthdate || birthdate.unavailable) {
-    return process.env.LOGIN_FAIL_CLOSED_AGE !== "1";
+    // Fail closed when explicitly set, or in production HTTPS deployments.
+    const failClosed =
+      process.env.LOGIN_FAIL_CLOSED_AGE === "1" ||
+      (process.env.LOGIN_FAIL_CLOSED_AGE !== "0" &&
+        String(process.env.SITE_URL || process.env.PUBLIC_API_URL || "").startsWith("https://"));
+    return !failClosed;
   }
   if (!birthdate.birthYear || !birthdate.birthMonth || !birthdate.birthDay) return false;
   const born = new Date(Date.UTC(birthdate.birthYear, birthdate.birthMonth - 1, birthdate.birthDay));

@@ -24,6 +24,7 @@ import {
 } from "./session.mjs";
 import { buildProfile, USAR_GROUP_ID } from "./profile.mjs";
 import { syncAwards, loadAwardsCache, getAwardsForUsername, getAwardsStatus, startAwardsRefresh } from "./awards.mjs";
+import { sanitizeReturnTo as sanitizeReturnToImpl } from "./sanitize-return.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SERVER_ROOT = join(__dirname, "..");
@@ -54,6 +55,45 @@ const ALLOWED_RETURN_ORIGINS = (
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
+
+/** Exact path prefixes allowed for OAuth returnTo (comma-separated full URLs). */
+const ALLOWED_RETURN_PREFIXES = (
+  process.env.ALLOWED_RETURN_PREFIXES ||
+  `${DEFAULT_RETURN_TO},http://127.0.0.1:4182/,http://localhost:4182/,https://qmc.isd/`
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean)
+  .map((s) => {
+    try {
+      const u = new URL(s);
+      return { origin: u.origin, path: u.pathname.replace(/\/index\.html$/, "/").replace(/\/?$/, "/") };
+    } catch {
+      return null;
+    }
+  })
+  .filter(Boolean);
+
+const rateBuckets = new Map();
+
+function clientKey(req) {
+  const xf = String(req.headers["x-forwarded-for"] || "")
+    .split(",")[0]
+    .trim();
+  return xf || req.socket?.remoteAddress || "unknown";
+}
+
+/** Simple fixed-window rate limit. Returns true if allowed. */
+function rateLimit(key, limit, windowMs) {
+  const now = Date.now();
+  let bucket = rateBuckets.get(key);
+  if (!bucket || bucket.resetAt < now) {
+    bucket = { count: 0, resetAt: now + windowMs };
+    rateBuckets.set(key, bucket);
+  }
+  bucket.count += 1;
+  return bucket.count <= limit;
+}
 
 /** state → { returnTo, exp } for OAuth (survives cross-site; cookie still set when same-site). */
 const pendingOauth = new Map();
@@ -107,20 +147,14 @@ function text(res, status, body, extraHeaders = {}) {
 }
 
 function sanitizeReturnTo(raw) {
-  const fallback = DEFAULT_RETURN_TO;
-  if (!raw) return fallback;
-  try {
-    if (raw.startsWith("/") && !raw.startsWith("//")) {
-      return fallback;
-    }
-    const u = new URL(raw);
-    const origin = u.origin;
-    if (!ALLOWED_RETURN_ORIGINS.includes(origin)) return fallback;
-    return u.toString();
-  } catch {
-    return fallback;
-  }
+  return sanitizeReturnToImpl(raw, {
+    fallback: DEFAULT_RETURN_TO,
+    allowedOrigins: ALLOWED_RETURN_ORIGINS,
+    allowedPrefixes: ALLOWED_RETURN_PREFIXES,
+  });
 }
+
+export { sanitizeReturnTo };
 
 function pruneOauth() {
   const now = Date.now();
@@ -180,6 +214,9 @@ function serveStatic(req, res, url) {
 }
 
 async function handleAuthStart(req, res, url) {
+  if (!rateLimit(`auth:${clientKey(req)}`, 20, 60_000)) {
+    return text(res, 429, "Too many login attempts. Try again shortly.");
+  }
   if (!CLIENT_ID || !CLIENT_SECRET) {
     return text(res, 500, "Roblox OAuth is not configured on this server.");
   }
@@ -273,6 +310,9 @@ async function handleAuthCallback(req, res, url) {
 }
 
 async function handleMe(req, res) {
+  if (!rateLimit(`me:${clientKey(req)}`, 120, 60_000)) {
+    return json(res, 429, { error: "rate_limited" }, corsHeaders(req));
+  }
   const session = await readSession(req);
   const headers = corsHeaders(req);
   if (!session) return json(res, 401, { error: "unauthorized" }, headers);
@@ -353,6 +393,9 @@ async function handler(req, res) {
   if (req.method === "POST" && url.pathname === "/api/awards/sync") {
     const session = await readSession(req);
     if (!session) return json(res, 401, { error: "unauthorized" }, headers);
+    if (!rateLimit(`sync:${session.userId || clientKey(req)}`, 3, 15 * 60_000)) {
+      return json(res, 429, { error: "rate_limited" }, headers);
+    }
     await syncAwards({ force: true });
     return json(res, 200, getAwardsStatus(), headers);
   }
@@ -365,12 +408,24 @@ async function handler(req, res) {
 }
 
 function requireConfig() {
-  initSession(JWT_SECRET || "dev-only-change-me-please");
+  const isProd =
+    process.env.NODE_ENV === "production" ||
+    (SITE_URL || "").startsWith("https://") ||
+    process.env.REQUIRE_SECURE_SECRETS === "1";
+
+  if (!JWT_SECRET || JWT_SECRET.length < 32) {
+    if (isProd) {
+      console.error("FATAL: JWT_SECRET must be set and at least 32 characters in production.");
+      process.exit(1);
+    }
+    console.warn("WARNING: JWT_SECRET missing or short — using insecure default for local boot.");
+    initSession("dev-only-change-me-please");
+  } else {
+    initSession(JWT_SECRET);
+  }
+
   if (!CLIENT_ID || !CLIENT_SECRET) {
     console.warn("WARNING: ROBLOX_CLIENT_ID / ROBLOX_CLIENT_SECRET not set — login disabled until configured.");
-  }
-  if (!JWT_SECRET || JWT_SECRET.length < 16) {
-    console.warn("WARNING: JWT_SECRET missing or short — using insecure default for boot.");
   }
 }
 

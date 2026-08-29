@@ -73,6 +73,7 @@ upsert_env PUBLIC_API_URL "$PUBLIC_API_HOST"
 upsert_env ROBLOX_REDIRECT_URI "${PUBLIC_API_HOST}/api/auth/callback"
 upsert_env DEFAULT_RETURN_TO "https://codythebeast89.github.io/uniform-price-calculator/"
 upsert_env ALLOWED_RETURN_ORIGINS "https://codythebeast89.github.io,https://qmc.isd,http://127.0.0.1:4182,http://localhost:4182"
+upsert_env ALLOWED_RETURN_PREFIXES "https://codythebeast89.github.io/uniform-price-calculator/,http://127.0.0.1:4182/,http://localhost:4182/,https://qmc.isd/"
 upsert_env BIND_HOST "0.0.0.0"
 upsert_env STATIC_ROOT "$REMOTE_DIR"
 upsert_env DATA_DIR "${REMOTE_DIR}/server/data"
@@ -142,7 +143,11 @@ else
 fi
 
 sleep 1
-curl -sf http://127.0.0.1:4182/health || curl -sf http://10.0.1.150:4182/health || true
+if ! curl -sf http://127.0.0.1:4182/health && ! curl -sf http://10.0.1.150:4182/health; then
+  echo "ERROR: qmc-calc health check failed" >&2
+  systemctl --user --no-pager --full status qmc-calc.service | head -40 || true
+  exit 1
+fi
 echo
 systemctl --user --no-pager --full status qmc-calc.service | head -20 || true
 EOF
