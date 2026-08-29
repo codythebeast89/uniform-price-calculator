@@ -195,7 +195,8 @@
       flex-wrap: wrap;
     }
 
-    .tier-select {
+    .tier-select,
+    .award-count-select {
       margin-left: auto;
       padding: 4px 8px;
       border-radius: 6px;
@@ -205,7 +206,8 @@
       font-size: 12px;
     }
 
-    .tier-select:disabled {
+    .tier-select:disabled,
+    .award-count-select:disabled {
       opacity: 0.45;
     }
 
@@ -929,6 +931,32 @@
       "President's Hundred Tab": 5,
     };
 
+    /** CAB / CMB / CIB (+ Master) support subsequent-award stars from the sheet (x2, x3, …). */
+    const COMBAT_BADGE_AWARDS = new Set([
+      "Combat Infantryman Badge",
+      "Master Combat Infantryman Badge",
+      "Combat Medical Badge",
+      "Master Combat Medical Badge",
+      "Combat Action Badge",
+      "Master Combat Action Badge",
+    ]);
+
+    function ordinalAwardLabel(n) {
+      if (n === 1) return "1st Award";
+      if (n === 2) return "2nd Award";
+      if (n === 3) return "3rd Award";
+      return `${n}th Award`;
+    }
+
+    function parseSheetAwardCount(name) {
+      const m = String(name || "").match(/\((\d+)(?:st|nd|rd|th)\s+Award\)/i);
+      return m ? Number(m[1]) : 1;
+    }
+
+    function combatBadgeCoreName(name) {
+      return String(name || "").replace(/\s*\(\d+(?:st|nd|rd|th)\s+Award\)\s*/gi, "").trim();
+    }
+
     const TAB_NAMES = new Set([
       "Ranger Tab", "Special Forces Tab", "Sapper Tab", "Jungle Tab", "Arctic Tab", "President's Hundred Tab",
     ]);
@@ -1276,11 +1304,16 @@ const UNIT_TREE = [
       return "other";
     }
 
-    function displayBadgeName(name, tierSelect) {
+    function displayBadgeName(name, tierSelect, awardSelect) {
+      let out = name;
       if (tierSelect && !tierSelect.disabled && tierSelect.value) {
-        return `${name} (${tierSelect.value})`;
+        out = `${name} (${tierSelect.value})`;
       }
-      return name;
+      if (awardSelect && !awardSelect.disabled) {
+        const n = Number(awardSelect.value);
+        if (n >= 2) out = `${out} (${ordinalAwardLabel(n)})`;
+      }
+      return out;
     }
 
     function createCheckboxes(container, items, type) {
@@ -1290,6 +1323,7 @@ const UNIT_TREE = [
         const itemName = typeof entry === "string" ? entry : entry.name;
         const itemPrice = typeof entry === "string" ? DEFAULT_PRICE : entry.price;
         const tiers = TIERED_BADGES[itemName];
+        const combatAwards = COMBAT_BADGE_AWARDS.has(itemName);
 
         const label = document.createElement("label");
         const checkbox = document.createElement("input");
@@ -1311,6 +1345,25 @@ const UNIT_TREE = [
             opt.textContent = tier;
             select.appendChild(opt);
           });
+          checkbox.addEventListener("change", () => {
+            select.disabled = !checkbox.checked;
+            updateCalculator();
+          });
+          select.addEventListener("change", updateCalculator);
+          label.appendChild(select);
+        } else if (combatAwards) {
+          const select = document.createElement("select");
+          select.className = "award-count-select";
+          select.title = "Subsequent awards (stars) from the QMC sheet x2 / x3 / …";
+          select.disabled = true;
+          for (let n = 1; n <= 6; n++) {
+            const opt = document.createElement("option");
+            opt.value = String(n);
+            opt.textContent = n === 1
+              ? "1st Award"
+              : `${ordinalAwardLabel(n)} (${n - 1} star${n - 1 === 1 ? "" : "s"})`;
+            select.appendChild(opt);
+          }
           checkbox.addEventListener("change", () => {
             select.disabled = !checkbox.checked;
             updateCalculator();
@@ -1388,7 +1441,8 @@ const UNIT_TREE = [
       document.querySelectorAll("input[type='checkbox']:checked").forEach(box => {
         total += Number(box.dataset.price);
         const tier = box.parentElement.querySelector(".tier-select");
-        const name = displayBadgeName(box.value, tier);
+        const awardCount = box.parentElement.querySelector(".award-count-select");
+        const name = displayBadgeName(box.value, tier, awardCount);
         selected[box.dataset.type].push(name);
       });
 
@@ -1660,11 +1714,37 @@ ${priceLine}
           label.classList.add("locked-out");
           const tier = label.querySelector(".tier-select");
           if (tier) tier.disabled = true;
+          const awardCount = label.querySelector(".award-count-select");
+          if (awardCount) {
+            awardCount.value = "1";
+            awardCount.disabled = true;
+          }
         } else {
           box.disabled = false;
           label.classList.remove("locked-out");
         }
       });
+    }
+
+    function applyEarnedCombatBadgeStars(profile) {
+      if (!profile?.awards?.length) return;
+      for (const award of profile.awards) {
+        if (award.category !== "badges") continue;
+        const core = combatBadgeCoreName(award.name);
+        if (!COMBAT_BADGE_AWARDS.has(core)) continue;
+        const count = parseSheetAwardCount(award.name);
+        const box = document.querySelector(
+          `input[type='checkbox'][data-type='Badges'][value="${CSS.escape(core)}"]`,
+        );
+        if (!box || box.disabled) continue;
+        box.checked = true;
+        const awardCount = box.parentElement.querySelector(".award-count-select");
+        if (awardCount) {
+          const max = Number(awardCount.options[awardCount.options.length - 1].value);
+          awardCount.value = String(Math.min(Math.max(count, 1), max));
+          awardCount.disabled = false;
+        }
+      }
     }
 
     function applyProfileToForm(profile) {
@@ -1685,6 +1765,7 @@ ${priceLine}
       if (profile.unit?.positionLabel && !fNametape.value) {
         // surface HQ position in template via nametape hint only if empty — skip
       }
+      applyEarnedCombatBadgeStars(profile);
     }
 
     function renderAuthBar(profile) {
@@ -1732,6 +1813,11 @@ ${priceLine}
         document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
           box.disabled = false;
           box.parentElement.classList.remove("locked-out");
+          const awardCount = box.parentElement.querySelector(".award-count-select");
+          if (awardCount) {
+            awardCount.value = "1";
+            awardCount.disabled = !box.checked;
+          }
         });
         updateCalculator();
       };
@@ -1760,8 +1846,8 @@ ${priceLine}
           (authProfile.awards || []).map((a) => normalizeAwardKey(a.name)),
         );
         renderAuthBar(authProfile);
-        applyProfileToForm(authProfile);
         applyAwardLocks();
+        applyProfileToForm(authProfile);
         updateCalculator();
       } catch (err) {
         console.warn("Auth API unavailable", err);
@@ -1773,6 +1859,7 @@ ${priceLine}
     createCheckboxes = function(container, items, type) {
       _origCreateCheckboxes(container, items, type);
       applyAwardLocks();
+      if (authProfile) applyEarnedCombatBadgeStars(authProfile);
     };
 
     loadAuthProfile();
