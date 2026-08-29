@@ -1311,7 +1311,7 @@ const UNIT_TREE = [
       }
       if (awardSelect && !awardSelect.disabled) {
         const n = Number(awardSelect.value);
-        if (n >= 2) out = `${out} (${ordinalAwardLabel(n)})`;
+        if (n >= 2) out = `${out} x${n}`;
       }
       return out;
     }
