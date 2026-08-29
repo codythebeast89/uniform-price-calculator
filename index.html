@@ -941,6 +941,13 @@
       "Master Combat Action Badge",
     ]);
 
+    /** Master combat badge blocks the matching Expert badge (EIB / EFMB / ESB). */
+    const MASTER_COMBAT_BLOCKS_EXPERT = {
+      "Master Combat Infantryman Badge": "Expert Infantryman Badge",
+      "Master Combat Medical Badge": "Expert Field Medical Badge",
+      "Master Combat Action Badge": "Expert Soldier Badge",
+    };
+
     function ordinalAwardLabel(n) {
       if (n === 1) return "1st Award";
       if (n === 2) return "2nd Award";
@@ -1366,6 +1373,7 @@ const UNIT_TREE = [
           }
           checkbox.addEventListener("change", () => {
             select.disabled = !checkbox.checked;
+            if (itemName.startsWith("Master Combat")) applyAwardLocks();
             updateCalculator();
           });
           select.addEventListener("change", updateCalculator);
@@ -1702,13 +1710,32 @@ ${priceLine}
       return false;
     }
 
+    function hasMasterCombatThatBlocks(expertName) {
+      const master = Object.keys(MASTER_COMBAT_BLOCKS_EXPERT).find(
+        (m) => MASTER_COMBAT_BLOCKS_EXPERT[m] === expertName,
+      );
+      if (!master) return false;
+      const masterKey = normalizeAwardKey(master);
+      if (earnedAwardKeys) {
+        for (const earned of earnedAwardKeys) {
+          const core = earned.replace(/\s+\d+(st|nd|rd|th) award$/i, "").trim();
+          if (core === masterKey) return true;
+        }
+      }
+      const box = document.querySelector(
+        `input[type='checkbox'][data-type='Badges'][value="${CSS.escape(master)}"]`,
+      );
+      return Boolean(box?.checked);
+    }
+
     function applyAwardLocks() {
       document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
         const type = box.dataset.type;
         if (!["Ribbons", "Badges", "Foreign Ribbons", "Foreign Badges"].includes(type)) return;
         const label = box.parentElement;
+        const blockedByMaster = type === "Badges" && hasMasterCombatThatBlocks(box.value);
         const earned = awardIsEarned(box.value);
-        if (earnedAwardKeys && !earned) {
+        if ((earnedAwardKeys && !earned) || blockedByMaster) {
           box.checked = false;
           box.disabled = true;
           label.classList.add("locked-out");
@@ -1766,6 +1793,7 @@ ${priceLine}
         // surface HQ position in template via nametape hint only if empty — skip
       }
       applyEarnedCombatBadgeStars(profile);
+      applyAwardLocks();
     }
 
     function renderAuthBar(profile) {
