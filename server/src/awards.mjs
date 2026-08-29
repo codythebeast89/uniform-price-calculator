@@ -137,6 +137,13 @@ export function attachCjs(name, cjs) {
   return `${name} (${cjs})`;
 }
 
+/** MC on CAB / CMB / CIB columns → Master Combat Action/Medical/Infantryman Badge. */
+const MASTER_COMBAT_BADGES = {
+  "combat action badge": "Master Combat Action Badge",
+  "combat medical badge": "Master Combat Medical Badge",
+  "combat infantryman badge": "Master Combat Infantryman Badge",
+};
+
 /**
  * Expand short badge level codes relative to the column's award name.
  * MC means Master of the *current* badge (CIB → Master Combat Infantryman Badge).
@@ -145,6 +152,8 @@ export function expandBadgeAbbrev(baseName, abbrev) {
   const base = baseName.trim();
   const key = abbrev.trim().toUpperCase();
   if (key === "MC") {
+    const mapped = MASTER_COMBAT_BADGES[base.toLowerCase()];
+    if (mapped) return mapped;
     if (base.toLowerCase().startsWith("master ")) return base;
     return `Master ${base}`;
   }
@@ -152,23 +161,39 @@ export function expandBadgeAbbrev(baseName, abbrev) {
   return base;
 }
 
+/** True when cell has a standalone MC token after the username (not xNotMC). */
+export function cellHasMasterCode(cell) {
+  const afterUser = String(cell || "")
+    .replace(INVISIBLE_CHARS, "")
+    .replace(/^@?[A-Za-z0-9_]+/, "")
+    .trim();
+  return /(?:^|[\s\-])MC(?:$|[\s\-,xX(])/i.test(` ${afterUser}`) || /^MC(?:$|[\s\-,xX(])/i.test(afterUser);
+}
+
 export function formatBadgeAward(baseName, cell) {
   const base = baseName.trim();
   const { rest, cjs } = extractCjs(cell);
+  const countMatch = rest.match(/\bx(\d+)\b/i);
+  const count = countMatch ? Number(countMatch[1]) : null;
+
+  // "user - MC", "user MC", "user x2 - MC", "user - MC x2"
+  if (cellHasMasterCode(rest) && !/,/.test(rest.replace(/^@?[A-Za-z0-9_]+/, ""))) {
+    let name = expandBadgeAbbrev(base, "MC");
+    if (count != null) name += ` (${ordinalAward(count)})`;
+    return attachCjs(name, cjs);
+  }
+
   const dash = rest.indexOf(" - ");
   if (dash === -1) return attachCjs(formatRibbonAward(base, rest), cjs);
 
   const detail = rest.slice(dash + 3).trim();
   if (!detail) return attachCjs(formatRibbonAward(base, rest), cjs);
 
-  // Count may sit before or after the dash: "user x2 - MC" or "user - MC x2"
-  const countMatch = rest.match(/\bx(\d+)\b/i);
-  const count = countMatch ? Number(countMatch[1]) : null;
   let label = detail.replace(/\s*x\d+\b/gi, "").trim();
   label = label.replace(/\s+/g, " ").replace(/^[\s-]+|[\s-]+$/g, "");
 
-  // Known short codes (MC, ESB), with or without an award count
-  if ((label.toUpperCase() === "MC" || label.toUpperCase() === "ESB") && !detail.includes(",")) {
+  // Known short codes (ESB), with or without an award count
+  if (label.toUpperCase() === "ESB" && !detail.includes(",")) {
     let name = expandBadgeAbbrev(base, label);
     if (count != null) name += ` (${ordinalAward(count)})`;
     return attachCjs(name, cjs);

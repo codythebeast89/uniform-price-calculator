@@ -601,8 +601,11 @@
 
     const SKILL_BADGES = [
       item("Combat Infantryman Badge"),
+      item("Master Combat Infantryman Badge"),
       item("Combat Medical Badge"),
+      item("Master Combat Medical Badge"),
       item("Combat Action Badge"),
+      item("Master Combat Action Badge"),
       item("Expert Infantryman Badge"),
       item("Expert Field Medical Badge"),
       item("Expert Soldier Badge"),
@@ -901,8 +904,11 @@
 
     const BADGE_GROUP = {
       "Combat Infantryman Badge": 1,
+      "Master Combat Infantryman Badge": 1,
       "Combat Medical Badge": 1,
+      "Master Combat Medical Badge": 1,
       "Combat Action Badge": 1,
+      "Master Combat Action Badge": 1,
       "Expert Infantryman Badge": 2,
       "Expert Field Medical Badge": 2,
       "Expert Soldier Badge": 2,
@@ -1617,6 +1623,24 @@ ${priceLine}
       if (earnedAwardKeys.has(key)) return true;
       // allow free default ribbons always when logged in
       if (FREE_DEFAULT_RIBBONS.some((r) => normalizeAwardKey(r) === key)) return true;
+
+      // CAB/CMB/CIB Master vs base must match exactly (sheet MC → Master … Badge)
+      const combatBase = key.replace(/^master /, "");
+      if (
+        combatBase === "combat action badge" ||
+        combatBase === "combat medical badge" ||
+        combatBase === "combat infantryman badge"
+      ) {
+        const wantMaster = key.startsWith("master ");
+        for (const earned of earnedAwardKeys) {
+          const earnedCore = earned.replace(/\s+\d+(st|nd|rd|th) award$/i, "").trim();
+          const earnedBase = earnedCore.replace(/^master /, "");
+          if (earnedBase !== combatBase) continue;
+          if (earnedCore.startsWith("master ") === wantMaster) return true;
+        }
+        return false;
+      }
+
       // tiered: "Aviator Badge (Master)" vs sheet "Master Aviator Badge" / base name
       for (const earned of earnedAwardKeys) {
         if (key.includes(earned) || earned.includes(key)) return true;
