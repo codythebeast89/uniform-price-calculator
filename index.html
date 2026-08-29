@@ -1885,21 +1885,28 @@ const UNIT_TREE = [
 
       const supportsRibbons = Boolean(selectedUniform?.ribbons?.length);
       const foreignRibbons = selected["Foreign Ribbons"] || [];
+      const unitCitationRibbons = selected.Accessories.filter((n) => {
+        const core = String(n || "")
+          .replace(/\s+x\d+$/i, "")
+          .replace(/\s*\([^)]*\)\s*$/, "")
+          .trim();
+        return UNIT_CITATION_NAMES.has(core);
+      });
       const selectableRibbons = selected.Ribbons.filter(r =>
         !FREE_DEFAULT_RIBBONS.some((f) => r === f || r.startsWith(f + " ") || r.startsWith(f + " (") || r.startsWith(f + " x")),
       );
-      const ribbonLines = supportsRibbons
+      const ribbonParts = supportsRibbons
         ? [
             ...FREE_DEFAULT_RIBBONS.map(r => `* ${r}`),
             ...selectableRibbons.map(r => `* ${r}`),
             ...foreignRibbons.map(r => `* ${r}`),
-          ].join("\n")
-        : ([...selected.Ribbons, ...foreignRibbons].length
-            ? [...selected.Ribbons, ...foreignRibbons].map(r => `* ${r}`).join("\n")
-            : "* None");
+            ...unitCitationRibbons.map(r => `* ${r}`),
+          ]
+        : [...selected.Ribbons, ...foreignRibbons, ...unitCitationRibbons].map(r => `* ${r}`);
+      const ribbonLines = ribbonParts.length ? ribbonParts.join("\n") : "* None";
 
-      // Accessories only — foreign awards are listed under Badges / Ribbons above.
-      const misc = [...selected.Accessories];
+      // Accessories only (unit citations listed under Ribbons above).
+      const misc = selected.Accessories.filter((n) => !unitCitationRibbons.includes(n));
 
       const offsetParts = [];
       if (selected.Accessories.includes("Ribbon Offset")) offsetParts.push("Ribbon");
