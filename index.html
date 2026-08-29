@@ -204,6 +204,8 @@
         <a href="https://trello.com/b/o1GnoMon/quartermaster-corps-badge-information" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">Badge Information</a>
         ·
         <a href="https://docs.google.com/spreadsheets/d/1e_AqHIGrGdfNSgoHt6kLV89E6LADJmlZzhfRAUXo0wY/edit" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">QMC Database</a>
+        ·
+        <a href="https://thebiggiant1122-afk.github.io/usar-qmc-console.github.io/" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">QMC Console</a>
       </div>
     </div>
 
@@ -323,6 +325,8 @@
 
     const item = (name, price = DEFAULT_PRICE) => ({ name, price });
 
+    // Ribbon list aligned with QMC Database / QMC Requisition Console.
+    // Free defaults (auto with BMT): National Defense, GWOT Service, Army Service.
     const RIBBONS = [
       item("Army Distinguished Service Cross"),
       item("Defense Distinguished Service"),
@@ -331,7 +335,7 @@
       item("Defense Superior Service"),
       item("Legion of Merit"),
       item("Distinguished Flying Cross"),
-      item("Soldiers Medal"),
+      item("Soldier's Medal"),
       item("Bronze Star"),
       item("Defense Meritorious Service"),
       item("Meritorious Service"),
@@ -340,23 +344,32 @@
       item("Army Commendation"),
       item("Joint Service Achievement"),
       item("Army Achievement"),
+      item("Public Service Commendation Medal"),
+      item("Wargames Medal"),
       item("Army Good Conduct"),
+      item("Army of Occupation Medal"),
+      item("Outstanding Volunteer"),
       item("National Defense Service", 0),
+      item("Global War on Terrorism Service", 0),
+      item("NCO Professional Development"),
+      item("Army Service", 0),
+      item("Military Justice"),
+      item("Army Recruiting Ribbon"),
+      item("United Nations Medal"),
+      item("Antarctica Service"),
+      item("Armed Forces Expeditionary Medal"),
+      item("Southwest Asia Service"),
       item("Kosovo Campaign"),
       item("Kuwait Liberation Medal"),
       item("Afghanistan Campaign"),
       item("Iraq Campaign"),
+      item("Joint Special Operations Campaign"),
+      item("Global War on Terrorism Expeditionary"),
+      item("Armed Forces Service Medal"),
       item("Army Sea Duty"),
-      item("Antarctica Service"),
-      item("Armed Forces Expeditionary Medal"),
-      item("Outstanding Volunteer"),
-      item("NATO Non-Article 5"),
-      item("NATO Article 5"),
-      item("NCO Professional Development"),
-      item("Global War on Terrorism Expeditionary", 0),
-      item("Global War on Terrorism Service", 0),
-      item("Army Service", 0),
       item("Army Overseas Service"),
+      item("NATO Non-Article 5"),
+      item("NATO ISAF"),
     ];
 
     const FOREIGN_RIBBONS = [
@@ -399,33 +412,49 @@
       item("Mountaineering Badge"),
       item("Space Operations Badge"),
       item("Special Operations Diver Badge"),
-      item("Driver and Mechanic Badges"),
-      item("Marksmanship Badges"),
+      item("Driver and Mechanic Badge"),
+      item("Marksmanship Badge"),
     ];
 
-    const SKILL_TABS = [
-      item("Special Forces Tab"),
+    // Combat tabs used on OCP-style uniforms (console COMBAT_TABS; P100 is Group 5 — OCP-prohibited).
+    const COMBAT_TABS = [
       item("Ranger Tab"),
+      item("Special Forces Tab"),
       item("Sapper Tab"),
+      item("Jungle Tab"),
+      item("Arctic Tab"),
+    ];
+
+    const ALL_SKILL_TABS = [
+      ...COMBAT_TABS,
+      PRESIDENTS_HUNDRED_TAB,
     ];
 
     const OCP_ID_BADGES = [
       item("Drill Sergeant Identification Badge"),
       item("Army Instructor Identification Badge"),
-      item("Master Gunner Identification Badge"),
       item("Recruiter Badge"),
+      item("Master Gunner Identification Badge"),
     ];
 
     const DRESS_ID_BADGES = [
       item("Military Police Identification Badge"),
       item("Criminal Investigation Division Identification Badge"),
-      item("U.S. Army Staff Identification Badge"),
-      item("Office of the Joint Chiefs of Staff Identification Badge"),
+      item("Army Staff Identification Badge"),
+      item("Joint Chiefs Identification Badge"),
     ];
 
     const CSIB = item("Combat Service Identification Badge");
     const SERVICE_STRIPE = item("Service Stripe");
     const OVERSEAS_BAR = item("Overseas Bar");
+
+    const UNIT_CITATIONS = [
+      item("Army Presidential Unit Citation"),
+      item("Joint Service Meritorious Unit"),
+      item("Army Valorous Unit Award"),
+      item("Army Meritorious Unit Commendation"),
+      item("Army Superior Unit Award"),
+    ];
 
     const AGSU_ACCESSORIES = [
       item("Ribbon Offset"),
@@ -433,9 +462,9 @@
       item("Badge Offset"),
       item("Regimental Distinctive Insignia"),
       item("Shoulderloop Regimental Distinctive Insignia"),
-      item("Unit Citation"),
       item("Officer Branch Insignia"),
       item("Infantry Cord / Infantry Buttons"),
+      ...UNIT_CITATIONS,
     ];
 
     const CLASS_C_ACCESSORIES = [
@@ -443,17 +472,17 @@
       item("RDI Offset"),
       item("Badge Offset"),
       item("Regimental Distinctive Insignia"),
-      item("Unit Citation"),
+      ...UNIT_CITATIONS,
     ];
 
     const OCP_STYLE_TABS_CSIB = [
-      ...SKILL_TABS,
+      ...COMBAT_TABS,
       CSIB,
     ];
 
     const OCP_COMBAT_BADGES = [
       ...SKILL_BADGES,
-      ...SKILL_TABS,
+      ...COMBAT_TABS,
       CSIB,
       ...OCP_ID_BADGES,
     ];
@@ -465,7 +494,7 @@
 
     const uniformData = {
 
-      "OCP": {
+      "OCP (Standard)": {
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: OCP_COMBAT_BADGES,
@@ -485,7 +514,7 @@
         ],
       },
 
-      "ACS": {
+      "Army Combat Shirt (ACS)": {
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: OCP_STYLE_TABS_CSIB,
@@ -505,7 +534,7 @@
         ],
       },
 
-      "Blackouts": {
+      "ASOC Blackouts": {
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: OCP_STYLE_TABS_CSIB,
@@ -514,7 +543,7 @@
         accessories: [],
       },
 
-      "Fleeces (Winter)": {
+      "Army Fleece (Winter)": {
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: [],
@@ -526,12 +555,12 @@
         ],
       },
 
-      "Tigerstripes": {
+      "ASF Tiger Stripes": {
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: [
           ...SKILL_BADGES,
-          ...SKILL_TABS,
+          ...ALL_SKILL_TABS,
         ],
         foreignRibbons: [],
         foreignBadges: [],
@@ -543,12 +572,11 @@
         ribbons: RIBBONS,
         badges: [
           ...SKILL_BADGES,
-          ...SKILL_TABS,
+          ...ALL_SKILL_TABS,
           CSIB,
           ...DRESS_ID_BADGES,
           SERVICE_STRIPE,
           OVERSEAS_BAR,
-          PRESIDENTS_HUNDRED_TAB,
         ],
         foreignRibbons: FOREIGN_RIBBONS,
         foreignBadges: [ROK_JUMP_WINGS],
@@ -559,7 +587,7 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: RIBBONS,
         badges: [
-          ...SKILL_TABS,
+          ...ALL_SKILL_TABS,
           ...SKILL_BADGES,
         ],
         foreignRibbons: [],
@@ -574,7 +602,7 @@
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: RIBBONS,
         badges: [
-          ...SKILL_TABS,
+          ...ALL_SKILL_TABS,
           ...SKILL_BADGES,
         ],
         foreignRibbons: [],
@@ -601,17 +629,16 @@
         ribbons: RIBBONS,
         badges: [
           ...SKILL_BADGES,
-          ...SKILL_TABS,
+          ...ALL_SKILL_TABS,
           CSIB,
           ...DRESS_ID_BADGES,
-          PRESIDENTS_HUNDRED_TAB,
         ],
         foreignRibbons: [],
         foreignBadges: [],
         accessories: CLASS_C_ACCESSORIES,
       },
 
-      "Tanker ICVC": {
+      "ICVC — Tanker": {
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: [],
@@ -623,7 +650,7 @@
         ],
       },
 
-      "Pilot ICVC": {
+      "ICVC — Pilot": {
         basePrice: BASE_UNIFORM_PRICE,
         ribbons: [],
         badges: AVIATION_BADGES,
