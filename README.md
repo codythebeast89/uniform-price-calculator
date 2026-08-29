@@ -3,7 +3,8 @@
 Community-maintained fork of the [original calculator](https://github.com/ProEJ78/uniform-price-calculator) by ProEJ78.
 
 **GitHub Pages (static):** https://codythebeast89.github.io/uniform-price-calculator/  
-**Imperial (OAuth + awards):** https://qmc.isd — see [docs/imperial-oauth-setup.md](docs/imperial-oauth-setup.md)
+**Public API (Cloudflare → Imperial):** https://qmc-api.imperialnode.net — [docs/cloudflare-tunnel-oauth.md](docs/cloudflare-tunnel-oauth.md)  
+**LAN:** https://qmc.isd — [docs/imperial-oauth-setup.md](docs/imperial-oauth-setup.md)
 
 Calculate uniform order prices and generate copyable ordering templates for QMC.
 
@@ -17,7 +18,7 @@ Standalone auth service under `server/` — **not** tied to the FORSCOM website 
 - Logged-in users can only select awards they have on record
 - Guests can still price manually without login
 
-Deploy: `./scripts/deploy-imperial.sh` (requires Imperial SSH). Setup details: [docs/imperial-oauth-setup.md](docs/imperial-oauth-setup.md).
+Deploy: `./scripts/deploy-imperial.sh` (requires Imperial SSH). Public login wiring: [docs/cloudflare-tunnel-oauth.md](docs/cloudflare-tunnel-oauth.md).
 
 ## Updating prices
 

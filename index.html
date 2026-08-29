@@ -341,8 +341,8 @@
       <span>Not logged in — awards stay open for manual pricing.</span>
     </div>
     <div>
-      <a class="button-link" id="loginBtn" href="/api/auth/roblox">Log in with Roblox</a>
-      <a class="button-link secondary hidden" id="logoutBtn" href="/api/auth/logout">Log out</a>
+      <button type="button" class="auth-btn" id="loginBtn">Log in with Roblox</button>
+      <button type="button" class="auth-btn secondary hidden" id="logoutBtn">Log out</button>
     </div>
   </div>
 
@@ -1533,9 +1533,55 @@ ${priceLine}
     }
 
 
-    // ---- Roblox auth + earned awards lock ----
+    // ---- Roblox auth + earned awards lock (GitHub Pages → Cloudflare Tunnel API) ----
+    const TOKEN_KEY = "qmc_calc_token";
+    const PAGES_RETURN = location.origin + location.pathname.replace(/\/index\.html$/, "/");
+    let API_BASE = ""; // loaded from api-config.json, or same-origin when hosted on Imperial
     let authProfile = null;
     let earnedAwardKeys = null; // Set of normalized names when logged in
+
+    function getToken() {
+      return localStorage.getItem(TOKEN_KEY) || "";
+    }
+
+    function setToken(token) {
+      if (token) localStorage.setItem(TOKEN_KEY, token);
+      else localStorage.removeItem(TOKEN_KEY);
+    }
+
+    function captureTokenFromHash() {
+      const hash = location.hash || "";
+      const match = hash.match(/(?:^#|&)?qmc_token=([^&]+)/);
+      if (!match) return;
+      setToken(decodeURIComponent(match[1]));
+      history.replaceState({}, "", location.pathname + location.search);
+    }
+
+    async function loadApiBase() {
+      try {
+        const res = await fetch("api-config.json", { cache: "no-store" });
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg.apiBase && !String(cfg.apiBase).includes("REPLACE-WITH")) {
+            API_BASE = String(cfg.apiBase).replace(/\/$/, "");
+            return;
+          }
+        }
+      } catch (_) {}
+      // Same-origin fallback (qmc.isd / local server)
+      API_BASE = "";
+    }
+
+    function apiUrl(path) {
+      return (API_BASE || "") + path;
+    }
+
+    function authHeaders() {
+      const h = {};
+      const token = getToken();
+      if (token) h.Authorization = "Bearer " + token;
+      return h;
+    }
 
     function normalizeAwardKey(name) {
       return String(name || "")
@@ -1644,9 +1690,41 @@ ${priceLine}
 
     async function loadAuthProfile() {
       showAuthErrorFromQuery();
+      captureTokenFromHash();
+      await loadApiBase();
+
+      const loginBtn = document.getElementById("loginBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+      loginBtn.onclick = () => {
+        const returnTo = encodeURIComponent(PAGES_RETURN);
+        location.href = apiUrl("/api/auth/roblox?returnTo=" + returnTo);
+      };
+      logoutBtn.onclick = () => {
+        setToken("");
+        authProfile = null;
+        earnedAwardKeys = null;
+        renderAuthBar(null);
+        // Re-enable all award checkboxes
+        document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
+          box.disabled = false;
+          box.parentElement.classList.remove("locked-out");
+        });
+        updateCalculator();
+      };
+
+      if (!getToken() && !API_BASE) {
+        // Pure static Pages with no api-config yet
+        renderAuthBar(null);
+        return;
+      }
+
       try {
-        const res = await fetch("/api/me", { credentials: "same-origin" });
+        const res = await fetch(apiUrl("/api/me"), {
+          credentials: API_BASE ? "omit" : "same-origin",
+          headers: authHeaders(),
+        });
         if (res.status === 401) {
+          setToken("");
           authProfile = null;
           earnedAwardKeys = null;
           renderAuthBar(null);
@@ -1662,7 +1740,6 @@ ${priceLine}
         applyAwardLocks();
         updateCalculator();
       } catch (err) {
-        // Static GitHub Pages / no API — silent
         console.warn("Auth API unavailable", err);
         renderAuthBar(null);
       }

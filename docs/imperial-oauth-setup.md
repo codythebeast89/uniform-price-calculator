@@ -4,14 +4,8 @@ Standalone auth for this calculator. **Not** the FORSCOM website OAuth app.
 
 Install path on Imperial: `~/stacks/qmc-calc` (user systemd unit `qmc-calc.service`).
 
-```
-https://qmc.isd  (Caddy on Imperial)
-   ├── static calculator UI  (served by qmc-calc-server)
-   └── /api/*                (same Node process on 127.0.0.1:4182)
-         ├── Roblox OAuth (dedicated app)
-         ├── /api/me → username, USAR rank, unit path hint, awards
-         └── QMC awards sheet sync
-```
+**Public (GitHub Pages login):** https://qmc-api.imperialnode.net — see [cloudflare-tunnel-oauth.md](./cloudflare-tunnel-oauth.md)  
+**LAN:** https://qmc.isd
 
 ## 1. Create a new Roblox OAuth app
 
@@ -19,20 +13,14 @@ https://qmc.isd  (Caddy on Imperial)
 2. Create an **OAuth 2.0** app (name e.g. `QMC Uniform Calculator`)
 3. **Redirect URI** (exact):
    ```
-   https://qmc.isd/api/auth/callback
+   https://qmc-api.imperialnode.net/api/auth/callback
    ```
 4. Scopes: `openid`, `profile`
 5. Copy **Client ID** and **Client Secret**
 
 Do **not** reuse the FORSCOM website OAuth credentials.
 
-## 2. DNS
-
-Point `qmc.isd` at Imperial the same way other `*.isd` hostnames are (homelab DNS / Caddy).
-
-## 3. Deploy
-
-From this repo (when Imperial is reachable):
+## 2. Deploy
 
 ```bash
 chmod +x scripts/deploy-imperial.sh
@@ -45,32 +33,21 @@ Then on Imperial:
 nano ~/stacks/qmc-calc/server/.env
 ```
 
-Set:
-
-```env
-ROBLOX_CLIENT_ID=...
-ROBLOX_CLIENT_SECRET=...
-```
-
-(`JWT_SECRET` is auto-generated on first deploy.)
-
-Restart:
+Set `ROBLOX_CLIENT_ID` / `ROBLOX_CLIENT_SECRET`, then:
 
 ```bash
 systemctl --user restart qmc-calc
-curl -s http://127.0.0.1:4182/health
+curl -s https://qmc-api.imperialnode.net/health
 ```
 
-## 4. Verify
+## 3. Verify
 
-1. Open `https://qmc.isd`
+1. Open https://codythebeast89.github.io/uniform-price-calculator/ (after pushing `api-config.json`)
 2. Click **Log in with Roblox**
 3. Complete OAuth — must be in USAR group `3108077`, account age ≥ 30 days
-4. Calculator should fill Discord/Roblox username, paygrade, unit path hint, and lock awards to the QMC database entries for that username
+4. Calculator should fill username, paygrade, unit path hint, and lock awards to the QMC database
 
 ## Login gate
-
-Same membership rules as FORSCOM auth (independent implementation):
 
 - Roblox account age ≥ 30 days
 - Age 13+ (when Roblox returns birthdate)
@@ -78,4 +55,4 @@ Same membership rules as FORSCOM auth (independent implementation):
 
 ## Unit path notes
 
-Command / Division are inferred from tracked Roblox groups. Brigade/company often is not a separate Roblox group — HQ roles return a **position label** (e.g. Company Commander) instead of a company name. Users can still finish the division dropdown manually.
+Command / Division are inferred from tracked Roblox groups. Brigade/company often is not a separate Roblox group — HQ roles return a **position label** instead of a company name. Users can still finish the division dropdown manually.
