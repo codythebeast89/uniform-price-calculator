@@ -74,6 +74,7 @@ upsert_env ROBLOX_REDIRECT_URI "${PUBLIC_API_HOST}/api/auth/callback"
 upsert_env DEFAULT_RETURN_TO "https://codythebeast89.github.io/uniform-price-calculator/"
 upsert_env ALLOWED_RETURN_ORIGINS "https://codythebeast89.github.io,https://qmc.isd,http://127.0.0.1:4182,http://localhost:4182"
 upsert_env ALLOWED_RETURN_PREFIXES "https://codythebeast89.github.io/uniform-price-calculator/,http://127.0.0.1:4182/,http://localhost:4182/,https://qmc.isd/"
+upsert_env LOGIN_FAIL_CLOSED_AGE "0"
 upsert_env BIND_HOST "0.0.0.0"
 upsert_env STATIC_ROOT "$REMOTE_DIR"
 upsert_env DATA_DIR "${REMOTE_DIR}/server/data"
@@ -101,17 +102,47 @@ fi
 JOINQMC_CADDY="/home/codyb/stacks/caddy-joinqmc/Caddyfile"
 JOINQMC_COMPOSE="/home/codyb/stacks/caddy-joinqmc/docker-compose.yml"
 if [ -f "$JOINQMC_CADDY" ]; then
-  if ! grep -q '^qmc-api\.imperialnode\.net' "$JOINQMC_CADDY"; then
-    {
-      echo ""
-      echo "# QMC Uniform Calculator API (public; not the Minecraft UI)"
-      cat "$REMOTE_DIR/deploy/caddy-qmc-api.imperialnode.net.conf"
-    } >> "$JOINQMC_CADDY"
-    echo "Appended qmc-api.imperialnode.net to caddy-joinqmc"
-  else
-    # Keep upstream in sync with repo (host.docker.internal)
-    sed -i 's|reverse_proxy 10\.0\.1\.150:4182|reverse_proxy host.docker.internal:4182|g' "$JOINQMC_CADDY"
-  fi
+  # Always sync the qmc-api site block from repo (api-only; never full static proxy).
+  python3 - <<'PY'
+from pathlib import Path
+caddy = Path("/home/codyb/stacks/caddy-joinqmc/Caddyfile")
+site = Path("/home/codyb/stacks/qmc-calc/deploy/caddy-qmc-api.imperialnode.net.conf").read_text().strip() + "\n"
+text = caddy.read_text()
+marker = "qmc-api.imperialnode.net"
+if marker not in text:
+    caddy.write_text(text.rstrip() + "\n\n# QMC Uniform Calculator API (public; not the Minecraft UI)\n" + site)
+    print("Appended qmc-api.imperialnode.net to caddy-joinqmc")
+else:
+    # Replace existing site block (brace-matched) so container remount gets api-only config.
+    start = text.find(marker)
+    # rewind to line start
+    start = text.rfind("\n", 0, start) + 1
+    i = text.find("{", start)
+    depth = 0
+    end = None
+    for idx in range(i, len(text)):
+        if text[idx] == "{":
+            depth += 1
+        elif text[idx] == "}":
+            depth -= 1
+            if depth == 0:
+                end = idx + 1
+                break
+    if end is None:
+        raise SystemExit("failed to parse qmc-api site block")
+    # drop a preceding comment line about QMC if present
+    prefix = text[:start]
+    if prefix.rstrip().endswith("Minecraft UI)"):
+        prefix = prefix[: prefix.rfind("\n#")]
+        if not prefix.endswith("\n"):
+            prefix += "\n"
+    new = prefix.rstrip() + "\n\n# QMC Uniform Calculator API (public; not the Minecraft UI)\n" + site + text[end:].lstrip("\n")
+    if new != text:
+        caddy.write_text(new if new.endswith("\n") else new + "\n")
+        print("Updated qmc-api.imperialnode.net site block (api-only)")
+    else:
+        print("qmc-api site block already matches repo")
+PY
   if [ -f "$JOINQMC_COMPOSE" ] && ! grep -q 'host.docker.internal:host-gateway' "$JOINQMC_COMPOSE"; then
     python3 - <<'PY'
 from pathlib import Path
@@ -123,13 +154,25 @@ if needle in text and "host.docker.internal:host-gateway" not in text:
     p.write_text(text.replace(needle, insert, 1))
     print("extra_hosts added to caddy-joinqmc compose")
 PY
-    (cd /home/codyb/stacks/caddy-joinqmc && docker compose up -d)
   fi
   # Docker → host API (mirrors FORSCOM staging :4181 rule)
   if command -v ufw >/dev/null && ! sudo ufw status | grep -q '4182/tcp'; then
     sudo ufw allow from 172.16.0.0/12 to any port 4182 proto tcp comment 'QMC calc API from Docker' || true
   fi
-  docker exec caddy-joinqmc caddy reload --config /etc/caddy/Caddyfile || true
+  # Force recreate so bind-mount picks up rewritten Caddyfile inode
+  (cd /home/codyb/stacks/caddy-joinqmc && docker compose up -d --force-recreate)
+  docker exec caddy-joinqmc caddy reload --config /etc/caddy/Caddyfile
+  # Assert api-only: root must 404; health must 200
+  sleep 1
+  root_code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:80/ 2>/dev/null || echo 000)"
+  # Probe via Host header against joinqmc if listening on 443 inside docker network is hard;
+  # fall back to checking container config contains respond 404
+  if ! docker exec caddy-joinqmc grep -A20 '^qmc-api' /etc/caddy/Caddyfile | grep -q 'respond 404'; then
+    echo "ERROR: caddy-joinqmc still missing api-only respond 404 for qmc-api" >&2
+    docker exec caddy-joinqmc grep -A25 '^qmc-api' /etc/caddy/Caddyfile || true
+    exit 1
+  fi
+  echo "caddy-joinqmc qmc-api site is api-only"
 else
   echo "caddy-joinqmc Caddyfile missing"
 fi

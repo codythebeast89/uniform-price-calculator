@@ -77,10 +77,23 @@ const ALLOWED_RETURN_PREFIXES = (
 const rateBuckets = new Map();
 
 function clientKey(req) {
-  const xf = String(req.headers["x-forwarded-for"] || "")
-    .split(",")[0]
-    .trim();
-  return xf || req.socket?.remoteAddress || "unknown";
+  // Prefer peer address from the reverse proxy hop. Only trust XFF when the
+  // immediate peer is loopback/Docker (Caddy), and take the last hop Caddy set.
+  const peer = req.socket?.remoteAddress || "";
+  const trustedProxy =
+    peer === "127.0.0.1" ||
+    peer === "::1" ||
+    peer === "::ffff:127.0.0.1" ||
+    peer.startsWith("172.") ||
+    peer.startsWith("::ffff:172.");
+  if (trustedProxy) {
+    const xf = String(req.headers["x-forwarded-for"] || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (xf.length) return xf[xf.length - 1];
+  }
+  return peer || "unknown";
 }
 
 /** Simple fixed-window rate limit. Returns true if allowed. */
@@ -370,11 +383,7 @@ async function handler(req, res) {
     return json(res, 200, {
       ok: true,
       service: "qmc-calc-server",
-      siteUrl: SITE_URL,
-      redirectUri: REDIRECT_URI,
-      defaultReturnTo: DEFAULT_RETURN_TO,
       oauthConfigured: Boolean(CLIENT_ID && CLIENT_SECRET),
-      awards: getAwardsStatus(),
     }, headers);
   }
 

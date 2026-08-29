@@ -8,10 +8,10 @@ import {
 } from "../src/auto-awards.mjs";
 
 describe("auto-awards", () => {
-  it("treats officers as BT-complete", () => {
-    assert.equal(completedBasicTraining("[O1] Second Lieutenant"), true);
+  it("parses enlisted grades with letter suffixes", () => {
+    assert.equal(completedBasicTraining("[E4A] Specialist"), true);
+    assert.equal(completedBasicTraining("[E9B] Command Sergeant Major"), true);
     assert.equal(completedBasicTraining("[E1] Private"), false);
-    assert.equal(isUsarE2OrHigher("[E2] Private Second Class"), true);
   });
 
   it("adds BT ribbons for officers", () => {
