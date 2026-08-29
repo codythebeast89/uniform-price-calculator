@@ -167,6 +167,89 @@
       max-width: 280px;
       margin: 0 auto;
     }
+
+    .violations {
+      background: #7f1d1d;
+      border: 1px solid #991b1b;
+      color: #fecaca;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    .violations strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .rule-ref {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 12px;
+      line-height: 1.45;
+    }
+
+    .checkbox-group label {
+      flex-wrap: wrap;
+    }
+
+    .tier-select {
+      margin-left: auto;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid #374151;
+      background: #1f2937;
+      color: white;
+      font-size: 12px;
+    }
+
+    .tier-select:disabled {
+      opacity: 0.45;
+    }
+
+    .format-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .format-fields label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+      color: #d1d5db;
+    }
+
+    .format-fields .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .format-fields input,
+    .format-fields select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #374151;
+      background: #1f2937;
+      color: white;
+      font-size: 14px;
+    }
+
+    .format-fields textarea {
+      height: 280px;
+    }
+
+    @media (max-width: 700px) {
+      .format-fields .row2 {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -226,6 +309,50 @@
     <!-- ORDER TEMPLATE -->
     <div class="card">
       <h2>Ordering Template</h2>
+
+      <div class="format-fields">
+        <div class="row2">
+          <label>Name (Discord ID)
+            <input type="text" id="fName" placeholder="username">
+          </label>
+          <label>Gender
+            <select id="fGender">
+              <option>Male</option>
+              <option>Female</option>
+            </select>
+          </label>
+        </div>
+        <div class="row2">
+          <label>Paygrade
+            <select id="fPaygrade"></select>
+          </label>
+          <label>Rank Name
+            <input type="text" id="fRank" readonly placeholder="Select a paygrade">
+          </label>
+        </div>
+        <div class="row2">
+          <label>Nametape
+            <input type="text" id="fNametape" placeholder="LASTNAME">
+          </label>
+          <label>Robux Proof Sent To
+            <input type="text" id="fProof" placeholder="LC username">
+          </label>
+        </div>
+        <label>Current Division / Brigade / Company
+          <div id="divisionSelects"></div>
+        </label>
+        <div class="row2">
+          <label>Discount Amount (R$)
+            <input type="number" id="fDiscAmt" min="0" placeholder="0">
+          </label>
+          <label>Discount Given By (QM)
+            <input type="text" id="fDiscBy" placeholder="QM username">
+          </label>
+        </div>
+      </div>
+
+      <div id="violationsBox"></div>
+      <div id="ruleRef" class="rule-ref"></div>
 
       <textarea id="templateOutput" readonly></textarea>
 
@@ -662,10 +789,287 @@
 
     };
 
+
+    const PAYGRADES = ['E2','E3','E4A','E4B','E5','E6','E7','E8A','E8B','E9A','E9B','E9C',
+      'O1','O2','O3','O4','O5','O6','O7','O8','O9','O10'];
+
+    const RANK_NAMES = {
+      E2:'Private Second Class', E3:'Private First Class', E4A:'Specialist', E4B:'Corporal',
+      E5:'Sergeant', E6:'Staff Sergeant', E7:'Sergeant First Class', E8A:'Master Sergeant', E8B:'First Sergeant',
+      E9A:'Sergeant Major', E9B:'Command Sergeant Major', E9C:'Sergeant Major of the Army',
+      O1:'Second Lieutenant', O2:'First Lieutenant', O3:'Captain', O4:'Major', O5:'Lieutenant Colonel',
+      O6:'Colonel', O7:'Brigadier General', O8:'Major General', O9:'Lieutenant General', O10:'General'
+    };
+
+    const FREE_DEFAULT_RIBBONS = [
+      "National Defense Service",
+      "Global War on Terrorism Service",
+      "Army Service",
+    ];
+
+    const TIERED_BADGES = {
+      "Aviator Badge": ["Basic", "Senior", "Master"],
+      "Aviation Badge": ["Basic", "Senior", "Master"],
+      "Space Operations Badge": ["Basic", "Senior", "Master"],
+      "Army Parachutist Badge": ["Basic", "Senior", "Master"],
+      "Military Freefall Badge": ["Basic", "Master"],
+      "Special Operations Diver Badge": ["Basic", "Diving Supervisor"],
+      "Recruiter Badge": ["Basic", "Gold", "Master"],
+      "Army Instructor Identification Badge": ["Basic", "Senior", "Master"],
+    };
+
+    const BADGE_GROUP = {
+      "Combat Infantryman Badge": 1,
+      "Combat Medical Badge": 1,
+      "Combat Action Badge": 1,
+      "Expert Infantryman Badge": 2,
+      "Expert Field Medical Badge": 2,
+      "Expert Soldier Badge": 2,
+      "Aviator Badge": 3,
+      "Flight Surgeon Badge": 3,
+      "Aviation Badge": 3,
+      "Army Astronaut Device": 3,
+      "Explosive Ordnance Disposal Badge": 3,
+      "Army Parachutist Badge": 4,
+      "Army Pathfinder Badge": 4,
+      "Army Air Assault Badge": 4,
+      "Military Freefall Badge": 4,
+      "Mountaineering Badge": 4,
+      "Space Operations Badge": 4,
+      "Special Operations Diver Badge": 4,
+      "Driver and Mechanic Badge": 5,
+      "Marksmanship Badge": 5,
+      "President's Hundred Tab": 5,
+    };
+
+    const TAB_NAMES = new Set([
+      "Ranger Tab", "Special Forces Tab", "Sapper Tab", "Jungle Tab", "Arctic Tab", "President's Hundred Tab",
+    ]);
+
+    const ID_BADGE_NAMES = new Set([
+      "Drill Sergeant Identification Badge",
+      "Army Instructor Identification Badge",
+      "Recruiter Badge",
+      "Master Gunner Identification Badge",
+      "Military Police Identification Badge",
+      "Criminal Investigation Division Identification Badge",
+      "Army Staff Identification Badge",
+      "Joint Chiefs Identification Badge",
+    ]);
+
+    // Per-uniform wear limits (from Uniform Guide / QMC console rules).
+    const UNIFORM_LIMITS = {
+      "OCP (Standard)": {
+        maxTabs: 2, maxSkillBadges: 4, comboGroups: [[1, 2], [3]], maxIdBadges: 2,
+        maxForeign: 1, rules: "Skill Tabs max 2 · Skill Badges max 4 (1 from Groups 1–2, 1 from Group 3) · ID Badges max 2 · 1 Foreign Award · Group 5 prohibited",
+      },
+      "Rolled OCP": {
+        maxTabs: 2, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
+        maxForeign: 1, rules: "Same as OCP · Watch authorized · Skill Badges max 4 (1 combined from Groups 1–3) · Group 5 prohibited",
+      },
+      "Army Combat Shirt (ACS)": {
+        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
+        rules: "Skill Tabs max 2 · CSIB authorized · No skill badges, ID badges, or ribbons",
+      },
+      "Rolled ACS": {
+        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
+        rules: "Skill Tabs max 2 · CSIB · Watch if rolled · No skill badges or ribbons",
+      },
+      "ASOC Blackouts": {
+        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
+        rules: "Skill Tabs max 2 · CSIB authorized · No watch, ribbons, skill badges, or ID badges",
+      },
+      "Army Fleece (Winter)": {
+        maxTabs: 0, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
+        rules: "Ranktab & Nametape only",
+      },
+      "ASF Tiger Stripes": {
+        maxTabs: 2, maxSkillBadges: 2, comboGroups: null, maxIdBadges: 0, maxForeign: 0,
+        rules: "Skill Tabs max 2 · Skill Badges max 2",
+      },
+      "AGSU (Class A)": {
+        maxTabs: 2, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
+        maxForeign: null, maxRibbons: null,
+        rules: "Skill Tabs max 2 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 · Ribbons unlimited · Offsets max 2 rows",
+      },
+      "Class B Short Sleeve (SS)": {
+        maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
+        maxForeign: 0, maxRibbons: 6,
+        rules: "Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized · RDI free/included",
+      },
+      "Class B Long Sleeve (LS)": {
+        maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
+        maxForeign: 0, maxRibbons: 6,
+        rules: "Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · RDI free/included · No watch",
+      },
+      "Class B Sweater (Winter)": {
+        maxTabs: 0, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
+        rules: "Nametape & Shoulderloop Ranktabs only",
+      },
+      "Class C": {
+        maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
+        maxForeign: 0, maxRibbons: null, idRequiresNoCsib: true,
+        rules: "Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · Ribbons unlimited",
+      },
+      "ICVC — Tanker": {
+        maxTabs: 0, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
+        rules: "Nametape & Ranktab only",
+      },
+      "ICVC — Pilot": {
+        maxTabs: 0, maxSkillBadges: 1, maxIdBadges: 0, maxForeign: 0, aviatorOnly: true,
+        rules: "Nametape & Ranktab · Only Aviator or Aviation Badge",
+      },
+    };
+
+const UNIT_TREE = [
+  {name:'Forces Command', children:[
+    {name:'1st Infantry Division', combative:'Combative', children:[
+      {name:'Raven Brigade', role:'Infantry', children:[
+        {name:'Phoenix Company', role:'Infantry', badge:'cib'},
+        {name:'Dagger Company', role:'Infantry', badge:'cib'}
+      ]},
+      {name:'Demon Brigade', role:'Mixed', children:[
+        {name:'Reaper Company', role:'Infantry', badge:'cib'},
+        {name:'Phantom Company', role:'Cavalry', badge:'cab'}
+      ]},
+      {name:'Army Infantry School Brigade', role:'Infantry-TU', children:[
+        {name:'Golf Company', role:'Infantry-TU', badge:'cib'},
+        {name:'Viper Company', role:'Infantry-TU', badge:'cib'}
+      ]},
+      {name:'Vanguard Brigade', role:'Mixed', children:[
+        {name:'Legion Company', role:'Infantry', badge:'cib'},
+        {name:'Lifeline Company', role:'Medical', badge:'cmb'}
+      ]}
+    ]},
+    {name:'1st Cavalry Division', combative:'Combative',
+      note:"Tankers/Operators may only earn a CAB while engaged in ground combat — operating a vehicle during a deployment doesn't qualify for a combat device.",
+      children:[
+        {name:'Ironhorse Brigade', role:'Infantry', badge:'cib'},
+        {name:'Greywolf Brigade', role:'Mixed', children:[
+          {name:'Warhorse Company', role:'Armored', badge:'cab'},
+          {name:'Nighthawks Company', role:'Cavalry', badge:'cab'},
+          {name:'Wrangler Company', role:'Cavalry-TU', badge:'cab'}
+        ]},
+        {name:'Spearhead Brigade', role:'Mixed', children:[
+          {name:'Garryowen Company', role:'Infantry', badge:'cib'},
+          {name:'Palehorse Company', role:'Aviation', badge:'cab'}
+        ]},
+        {name:'194th Armored Brigade', role:'Cavalry-TU', badge:'cab'}
+      ]},
+    {name:'82nd Airborne Division', combative:'Combative', children:[
+      {name:'Panther Brigade', role:'Mixed', children:[
+        {name:'173rd Mountaineering Company', role:'Mixed', badge:'cab'},
+        {name:'Angel Company', role:'Medical', badge:'cmb'}
+      ]},
+      {name:'Falcon Brigade', role:'Mixed', children:[
+        {name:'Hawk Company', role:'Infantry', badge:'cib'},
+        {name:'Eagle Company', role:'Infantry', badge:'cib'}
+      ]},
+      {name:'Black Hats Brigade', role:'Infantry-TU', children:[
+        {name:'Orpheus Company', role:'Infantry-TU', badge:'cib'}
+      ]}
+    ]},
+    {name:'101st Airborne Division', combative:'Combative', children:[
+      {name:'Strike Brigade', role:'Mixed', children:[
+        {name:'Raptor Company', role:'Cavalry', badge:'cab'},
+        {name:'Assurgam Company', role:'Medical', badge:'cmb'},
+        {name:'Bulldog Company', role:'Infantry', badge:'cib'}
+      ]},
+      {name:'Wings Brigade', role:'Aviation', children:[
+        {name:'Air Assault Company', role:'Aviation', badge:'cab'},
+        {name:'Air Logistics Company', role:'Aviation', badge:'cab'},
+        {name:'Aviation Qualification Company', role:'Aviation-TU', badge:'cab'}
+      ]},
+      {name:'Black Hats Brigade', role:'Infantry-TU', children:[
+        {name:'Aurora Company', role:'Infantry-TU', badge:'cib'},
+        {name:'Titan Company', role:'Infantry-TU', badge:'cib'}
+      ]}
+    ]}
+  ]},
+  {name:'Army Special Operations Command', children:[
+    {name:'75th Ranger Regiment', combative:'Combative', children:[
+      {name:'1st Ranger Battalion', role:'Infantry', children:[
+        {name:'Ares Company', role:'Infantry', badge:'cib'},
+        {name:'Hades Company', role:'Infantry', badge:'cib'}
+      ]},
+      {name:'2nd Ranger Battalion', role:'Infantry', children:[
+        {name:'Odin Company', role:'Infantry', badge:'cib'},
+        {name:'Sentinel Company', role:'Infantry-TU', badge:'cib'}
+      ]}
+    ]},
+    {name:'Army Special Forces', combative:'Combative', children:[
+      {name:'1st Special Forces Group', role:'Special Forces', children:[
+        {name:'Alpha Company', role:'Special Forces', badge:'cib'},
+        {name:'Bravo Company', role:'Special Forces', badge:'cib'}
+      ]},
+      {name:'7th Special Forces Group', role:'Mixed', children:[
+        {name:'Helios Company', role:'Special Forces', badge:'cib'},
+        {name:'Yankee Company', role:'Special Forces-TU', badge:'cib'}
+      ]}
+    ]},
+    {name:'John F. Kennedy Special Warfare Center and School', combative:'Non-combative', note:'Combative division has to be present for deployment credit.', children:[
+      {name:'1st Special Warfare Training Group', role:'Special Forces-TU', children:[
+        {name:'Artemis Company', role:'Special Forces-TU', badge:'cib'},
+        {name:'Spartan Company', role:'Special Forces-TU', badge:'cib'}
+      ]},
+      {name:'2nd Special Warfare Training Group', role:'Special Forces-TU', children:[
+        {name:'Hestia Company', role:'Special Forces-TU', badge:'cib'},
+        {name:'Cyrus Company', role:'Special Forces-TU', badge:'cib'}
+      ]}
+    ]},
+    {name:'Task Force Dagger', combative:'Combative', children:[
+      {name:'5th Special Forces Group', role:'Special Forces', badge:'cib'},
+      {name:'Joint Assault Group', role:'Mixed', children:[
+        {name:'Ranger Element', role:'Infantry', badge:'cib'},
+        {name:'Aviation Element', role:'Aviation', badge:'cab'}
+      ]},
+      {name:'Special Operations Support Company', role:'Special Forces-TU', badge:'cib'}
+    ]}
+  ]},
+  {name:'Training and Doctrine Command', children:[
+    {name:'165th Infantry Brigade', role:'Adjutant', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.', children:[
+      {name:'Drill Sergeant Academy', role:'Adjutant-TU', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'}
+    ]},
+    {name:'Army University', role:'Adjutant', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.', children:[
+      {name:'Officer Candidate School', role:'Adjutant-TU', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
+      {name:'Sergeant Major Academy', role:'Adjutant-TU', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'}
+    ]},
+    {name:'Recruiting and Retention College', role:'Adjutant', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.', children:[
+      {name:'Army Instructor Course', role:'Adjutant-TU', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
+      {name:'Army Recruiter Course', role:'Adjutant-TU', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
+      {name:'Expert Soldier Badge Course', role:'Adjutant-TU', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
+      {name:'Combat Readiness Course', role:'Adjutant-TU', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'}
+    ]}
+  ]},
+  {name:'Military Police Corps', children:[
+    {name:'Criminal Investigations Division', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.', children:[
+      {name:'Office of Criminal Investigations', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
+      {name:'Office of Special Investigations', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'}
+    ]},
+    {name:'Judge Advocate General Corps', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
+    {name:'14th Battalion', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.', children:[
+      {name:'Alpha Company', role:'Military Police-TU', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
+      {name:'Bravo Company', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'}
+    ]},
+    {name:'503rd Battalion', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.', children:[
+      {name:'Special Reaction Team', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
+      {name:'Executive Protection Detail', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'}
+    ]}
+  ]},
+  {name:'Army Administrative Command', children:[
+    {name:'Army Foreign Affairs'},
+    {name:'Quartermaster Corps'},
+    {name:'Community Staff'}
+  ]}
+];
+
+
     const uniformSelect = document.getElementById("uniformSelect");
     const finalPrice = document.getElementById("finalPrice");
     const templateOutput = document.getElementById("templateOutput");
     const copyButton = document.getElementById("copyButton");
+    const violationsBox = document.getElementById("violationsBox");
+    const ruleRef = document.getElementById("ruleRef");
 
     const ribbonsCard = document.getElementById("ribbonsCard");
     const badgesCard = document.getElementById("badgesCard");
@@ -679,6 +1083,17 @@
     const foreignBadgesContainer = document.getElementById("foreignBadgesContainer");
     const accessoriesContainer = document.getElementById("accessoriesContainer");
 
+    const fName = document.getElementById("fName");
+    const fGender = document.getElementById("fGender");
+    const fPaygrade = document.getElementById("fPaygrade");
+    const fRank = document.getElementById("fRank");
+    const fNametape = document.getElementById("fNametape");
+    const fProof = document.getElementById("fProof");
+    const fDiscAmt = document.getElementById("fDiscAmt");
+    const fDiscBy = document.getElementById("fDiscBy");
+    const divisionSelects = document.getElementById("divisionSelects");
+
+    let divisionPath = [];
 
     // Populate uniform dropdown
     Object.keys(uniformData).forEach(uniform => {
@@ -688,53 +1103,144 @@
       uniformSelect.appendChild(option);
     });
 
+    // Populate paygrades
+    const blankPay = document.createElement("option");
+    blankPay.value = "";
+    blankPay.textContent = "Select Paygrade";
+    fPaygrade.appendChild(blankPay);
+    PAYGRADES.forEach(pg => {
+      const option = document.createElement("option");
+      option.value = pg;
+      option.textContent = pg;
+      fPaygrade.appendChild(option);
+    });
 
-    // Create checkbox list
+    fPaygrade.addEventListener("change", () => {
+      fRank.value = RANK_NAMES[fPaygrade.value] || "";
+      updateCalculator();
+    });
+
+    [fName, fGender, fNametape, fProof, fDiscAmt, fDiscBy].forEach(el => {
+      el.addEventListener("input", updateCalculator);
+      el.addEventListener("change", updateCalculator);
+    });
+
+    function wireDivision() {
+      divisionSelects.innerHTML = "";
+      let currentNodes = UNIT_TREE;
+      const pathCopy = [...divisionPath];
+      divisionPath = [];
+
+      const addSelect = (nodes, depth) => {
+        const select = document.createElement("select");
+        if (depth > 0) select.style.marginTop = "8px";
+        const blank = document.createElement("option");
+        blank.value = "";
+        blank.textContent = depth === 0 ? "Select command / unit" : "Select subordinate (optional)";
+        select.appendChild(blank);
+        nodes.forEach((node, idx) => {
+          const opt = document.createElement("option");
+          opt.value = String(idx);
+          opt.textContent = node.name;
+          select.appendChild(opt);
+        });
+
+        const preset = pathCopy[depth];
+        if (preset) {
+          const idx = nodes.findIndex(n => n.name === preset);
+          if (idx >= 0) {
+            select.value = String(idx);
+            divisionPath[depth] = nodes[idx].name;
+          }
+        }
+
+        select.addEventListener("change", () => {
+          if (select.value === "") {
+            divisionPath = divisionPath.slice(0, depth);
+          } else {
+            divisionPath = divisionPath.slice(0, depth);
+            divisionPath[depth] = nodes[Number(select.value)].name;
+          }
+          wireDivision();
+          updateCalculator();
+        });
+
+        divisionSelects.appendChild(select);
+
+        if (select.value !== "") {
+          const node = nodes[Number(select.value)];
+          if (node.children && node.children.length) {
+            addSelect(node.children, depth + 1);
+          }
+        }
+      };
+
+      addSelect(currentNodes, 0);
+    }
+
+    wireDivision();
+
+    function classifyBadge(name) {
+      if (name === "Combat Service Identification Badge") return "csib";
+      if (TAB_NAMES.has(name)) return "tab";
+      if (ID_BADGE_NAMES.has(name)) return "id";
+      if (name === "Service Stripe" || name === "Overseas Bar") return "service";
+      if (BADGE_GROUP[name]) return "skill";
+      return "other";
+    }
+
+    function displayBadgeName(name, tierSelect) {
+      if (tierSelect && !tierSelect.disabled && tierSelect.value) {
+        return `${name} (${tierSelect.value})`;
+      }
+      return name;
+    }
+
     function createCheckboxes(container, items, type) {
+      container.innerHTML = "";
 
-  container.innerHTML = "";
+      items.forEach(entry => {
+        const itemName = typeof entry === "string" ? entry : entry.name;
+        const itemPrice = typeof entry === "string" ? DEFAULT_PRICE : entry.price;
+        const tiers = TIERED_BADGES[itemName];
 
-  items.forEach(item => {
+        const label = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = itemName;
+        checkbox.dataset.type = type;
+        checkbox.dataset.price = itemPrice;
 
-    // Supports BOTH strings and custom price objects
-    const itemName = typeof item === "string"
-      ? item
-      : item.name;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(`${itemName} (R$${itemPrice})`));
 
-    const itemPrice = typeof item === "string"
-      ? DEFAULT_PRICE
-      : item.price;
+        if (tiers) {
+          const select = document.createElement("select");
+          select.className = "tier-select";
+          select.disabled = true;
+          tiers.forEach(tier => {
+            const opt = document.createElement("option");
+            opt.value = tier;
+            opt.textContent = tier;
+            select.appendChild(opt);
+          });
+          checkbox.addEventListener("change", () => {
+            select.disabled = !checkbox.checked;
+            updateCalculator();
+          });
+          select.addEventListener("change", updateCalculator);
+          label.appendChild(select);
+        } else {
+          checkbox.addEventListener("change", updateCalculator);
+        }
 
-    const label = document.createElement("label");
+        container.appendChild(label);
+      });
+    }
 
-    const checkbox = document.createElement("input");
-
-    checkbox.type = "checkbox";
-    checkbox.value = itemName;
-    checkbox.dataset.type = type;
-    checkbox.dataset.price = itemPrice;
-
-    checkbox.addEventListener("change", updateCalculator);
-
-    label.appendChild(checkbox);
-
-    label.appendChild(
-      document.createTextNode(`${itemName} (R$${itemPrice})`)
-    );
-
-    container.appendChild(label);
-
-  });
-
-}
-
-
-    // Show/hide categories based on selected uniform
     uniformSelect.addEventListener("change", () => {
-
       const selectedUniform = uniformData[uniformSelect.value];
 
-      // Reset all cards
       ribbonsCard.classList.add("hidden");
       badgesCard.classList.add("hidden");
       foreignRibbonsCard.classList.add("hidden");
@@ -752,131 +1258,208 @@
         return;
       }
 
-      // Ribbons
       if (selectedUniform.ribbons.length > 0) {
         ribbonsCard.classList.remove("hidden");
-        createCheckboxes(
-          ribbonsContainer,
-          selectedUniform.ribbons,
-          "Ribbons"
-        );
+        createCheckboxes(ribbonsContainer, selectedUniform.ribbons, "Ribbons");
       }
 
-      // Badges
       if (selectedUniform.badges.length > 0) {
         badgesCard.classList.remove("hidden");
-        createCheckboxes(
-          badgesContainer,
-          selectedUniform.badges,
-          "Badges"
-        );
+        createCheckboxes(badgesContainer, selectedUniform.badges, "Badges");
       }
 
-      // Foreign Ribbons
       if (selectedUniform.foreignRibbons.length > 0) {
         foreignRibbonsCard.classList.remove("hidden");
-        createCheckboxes(
-          foreignRibbonsContainer,
-          selectedUniform.foreignRibbons,
-          "Foreign Ribbons"
-        );
+        createCheckboxes(foreignRibbonsContainer, selectedUniform.foreignRibbons, "Foreign Ribbons");
       }
 
-      // Foreign Badges
       if (selectedUniform.foreignBadges.length > 0) {
         foreignBadgesCard.classList.remove("hidden");
-        createCheckboxes(
-          foreignBadgesContainer,
-          selectedUniform.foreignBadges,
-          "Foreign Badges"
-        );
+        createCheckboxes(foreignBadgesContainer, selectedUniform.foreignBadges, "Foreign Badges");
       }
 
-      // Accessories
       if (selectedUniform.accessories.length > 0) {
         accessoriesCard.classList.remove("hidden");
-        createCheckboxes(
-          accessoriesContainer,
-          selectedUniform.accessories,
-          "Accessories"
-        );
+        createCheckboxes(accessoriesContainer, selectedUniform.accessories, "Accessories");
       }
 
       updateCalculator();
     });
 
-
-    // Main calculator
-    function updateCalculator() {
-
-      const checked = document.querySelectorAll("input[type='checkbox']:checked");
-
-      const selectedUniform = uniformData[uniformSelect.value];
-
-      let total = selectedUniform?.basePrice || 0;
-
+    function gatherSelection() {
       const selected = {
-        "Badges": [],
-        "Ribbons": [],
+        Badges: [],
+        Ribbons: [],
         "Foreign Ribbons": [],
         "Foreign Badges": [],
-        "Accessories": []
+        Accessories: [],
       };
+      let total = 0;
+      const selectedUniform = uniformData[uniformSelect.value];
+      if (selectedUniform) total += selectedUniform.basePrice || 0;
 
-      checked.forEach(box => {
+      document.querySelectorAll("input[type='checkbox']:checked").forEach(box => {
         total += Number(box.dataset.price);
-
-        selected[box.dataset.type].push(box.value);
+        const tier = box.parentElement.querySelector(".tier-select");
+        const name = displayBadgeName(box.value, tier);
+        selected[box.dataset.type].push(name);
       });
+
+      const discount = Math.min(Number(fDiscAmt.value) || 0, total);
+      if (discount > 0) total -= discount;
+
+      return { selected, total, discount, selectedUniform };
+    }
+
+    function validateSelection(selected) {
+      const issues = [];
+      const key = uniformSelect.value;
+      const limits = UNIFORM_LIMITS[key];
+      if (!limits) return issues;
+
+      const badges = selected.Badges.map(n => n.replace(/ \([^)]+\)$/, ""));
+      const tabs = badges.filter(n => classifyBadge(n) === "tab");
+      const skill = badges.filter(n => classifyBadge(n) === "skill");
+      const ids = badges.filter(n => classifyBadge(n) === "id");
+      const hasCsib = badges.includes("Combat Service Identification Badge");
+      const foreignCount = selected["Foreign Ribbons"].length + selected["Foreign Badges"].length;
+      // Class B: treat ribbons excluding free defaults for max? Console counts selectable only.
+      const ribbonCount = selected.Ribbons.filter(r => !FREE_DEFAULT_RIBBONS.includes(r)).length;
+
+      if (limits.maxTabs != null && tabs.length > limits.maxTabs) {
+        issues.push(`Skill Tabs: ${tabs.length}/${limits.maxTabs} — exceeds max.`);
+      }
+      if (limits.maxSkillBadges != null && skill.length > limits.maxSkillBadges) {
+        issues.push(`Skill Badges: ${skill.length}/${limits.maxSkillBadges} — exceeds max.`);
+      }
+      if (limits.comboSkill) {
+        const combo = tabs.length + skill.length;
+        if (combo > 1) {
+          issues.push(`Class B allows only 1 Skill Badge OR Skill Tab total (selected ${combo}).`);
+        }
+      }
+      if (limits.comboGroups) {
+        limits.comboGroups.forEach(groupSet => {
+          const hits = skill.filter(n => groupSet.includes(BADGE_GROUP[n]));
+          if (hits.length > 1) {
+            issues.push(`Only 1 badge allowed from Groups ${groupSet.join("/")}: ${hits.join(", ")}.`);
+          }
+        });
+      }
+      if (limits.maxIdBadges != null) {
+        const idMax = limits.idRequiresNoCsib && hasCsib ? 0 : limits.maxIdBadges;
+        if (ids.length > idMax) {
+          if (limits.idRequiresNoCsib && hasCsib) {
+            issues.push("ID Badges are not allowed when CSIB is worn on Class C.");
+          } else {
+            issues.push(`ID Badges: ${ids.length}/${limits.maxIdBadges} — exceeds max.`);
+          }
+        }
+      }
+      if (limits.maxForeign != null && foreignCount > limits.maxForeign) {
+        issues.push(`Foreign awards: ${foreignCount}/${limits.maxForeign} — exceeds max.`);
+      }
+      if (limits.maxRibbons != null && ribbonCount > limits.maxRibbons) {
+        issues.push(`Ribbons: ${ribbonCount}/${limits.maxRibbons} — exceeds max.`);
+      }
+      if (limits.aviatorOnly) {
+        const invalid = skill.filter(n => n !== "Aviator Badge" && n !== "Aviation Badge");
+        if (invalid.length) {
+          issues.push("Pilot ICVC only allows Aviator or Aviation Badge.");
+        }
+      }
+      // Group 5 prohibited on OCP variants
+      if (key === "OCP (Standard)" || key === "Rolled OCP") {
+        const g5 = skill.filter(n => BADGE_GROUP[n] === 5);
+        if (g5.length) {
+          issues.push(`Group 5 badges are prohibited on this uniform: ${g5.join(", ")}.`);
+        }
+      }
+      return issues;
+    }
+
+    function updateCalculator() {
+      const { selected, total, discount, selectedUniform } = gatherSelection();
+      const issues = validateSelection(selected);
+      const limits = UNIFORM_LIMITS[uniformSelect.value];
 
       finalPrice.textContent = `R$${total}`;
 
-     templateOutput.value =
-`Uniform Type: ${uniformSelect.value || "None"}
+      if (limits?.rules) {
+        ruleRef.textContent = limits.rules;
+      } else {
+        ruleRef.textContent = "";
+      }
 
-Final Price: $${total}
+      if (issues.length) {
+        violationsBox.innerHTML = `<div class="violations"><strong>Uniform Guide violations</strong>${issues.map(i => `• ${i}`).join("<br>")}</div>`;
+      } else {
+        violationsBox.innerHTML = "";
+      }
 
-Badges:
-${selected["Badges"].length
-  ? selected["Badges"].map(item => `• ${item}`).join("\n")
-  : "• None"}
+      const badgeLines = selected.Badges.length
+        ? selected.Badges.map(item => `* ${item}`).join("\n")
+        : "* None";
 
-Ribbons:
-${selected["Ribbons"].length
-  ? selected["Ribbons"].map(item => `• ${item}`).join("\n")
-  : "• None"}
+      const supportsRibbons = Boolean(selectedUniform?.ribbons?.length);
+      const ribbonLines = supportsRibbons
+        ? [
+            ...FREE_DEFAULT_RIBBONS.map(r => `* ${r}`),
+            ...selected.Ribbons
+              .filter(r => !FREE_DEFAULT_RIBBONS.includes(r))
+              .map(r => `* ${r}`),
+          ].join("\n")
+        : (selected.Ribbons.length
+            ? selected.Ribbons.map(r => `* ${r}`).join("\n")
+            : "* None");
 
-Foreign Ribbons:
-${selected["Foreign Ribbons"].length
-  ? selected["Foreign Ribbons"].map(item => `• ${item}`).join("\n")
-  : "• None"}
+      const misc = [
+        ...selected.Accessories,
+        ...selected["Foreign Ribbons"],
+        ...selected["Foreign Badges"],
+      ];
 
-Foreign Badges:
-${selected["Foreign Badges"].length
-  ? selected["Foreign Badges"].map(item => `• ${item}`).join("\n")
-  : "• None"}
+      const offsetParts = [];
+      if (selected.Accessories.includes("Ribbon Offset")) offsetParts.push("Ribbon");
+      if (selected.Accessories.includes("Badge Offset")) offsetParts.push("Badge");
+      if (selected.Accessories.includes("RDI Offset")) offsetParts.push("RDI");
 
-Accessories:
-${selected["Accessories"].length
-  ? selected["Accessories"].map(item => `• ${item}`).join("\n")
-  : "• None"}`;
+      const division = divisionPath.join(" / ") || "";
+      let priceLine = `**Price:** R$${total}`;
+      if (discount > 0) {
+        priceLine += ` (Discounted — ping @${fDiscBy.value || "[QM]"})`;
+      }
+
+      templateOutput.value =
+`**Name:** <@${fName.value || "[Discord ID]"}>
+**Rank:** ${fPaygrade.value || "[Paygrade]"}, ${fRank.value || "[Rank]"}
+**Type:** ${uniformSelect.value || "[Uniform]"}
+**Gender:** ${fGender.value}
+
+**Badges:**
+
+${badgeLines}
+
+**Ribbons:**
+
+${ribbonLines}
+${misc.length ? `\n**Misc:** ${misc.join(", ")}\n` : ""}
+**Current Division/Brigade/Company:** ${division}
+**Nametape:** ${fNametape.value || ""}
+**Offset:** ${offsetParts.length ? offsetParts.join(", ") : "None"}
+${priceLine}
+**Robux Proof Sent to:** @${fProof.value || "[LC]"}`;
     }
-
 
     updateCalculator();
 
-
-    // Copy ordering template
     copyButton.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(templateOutput.value);
-
         copyButton.textContent = "Copied!";
-
         setTimeout(() => {
           copyButton.textContent = "Copy Template";
         }, 1500);
-
       } catch (err) {
         alert("Failed to copy template.");
       }
