@@ -362,6 +362,7 @@
 
       <div class="price-note">
         Base uniform: $150. Most ribbons, badges, and add-ons: $3 each.
+        RDIs, unit citations, officer branch insignia, infantry cord/buttons, nametapes, and rank tabs are free.
         <br />
         <a href="https://docs.google.com/document/d/1fc9gU7zDWnZu_3xoFPyP9NUH3D0jb9kDJG7SaAFitOM/edit" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">Uniform Guide</a>
         ·
@@ -660,21 +661,21 @@
     const OVERSEAS_BAR = item("Overseas Bar");
 
     const UNIT_CITATIONS = [
-      item("Army Presidential Unit Citation"),
-      item("Joint Service Meritorious Unit"),
-      item("Army Valorous Unit Award"),
-      item("Army Meritorious Unit Commendation"),
-      item("Army Superior Unit Award"),
+      item("Army Presidential Unit Citation", 0),
+      item("Joint Service Meritorious Unit", 0),
+      item("Army Valorous Unit Award", 0),
+      item("Army Meritorious Unit Commendation", 0),
+      item("Army Superior Unit Award", 0),
     ];
 
     const AGSU_ACCESSORIES = [
       item("Ribbon Offset"),
       item("RDI Offset"),
       item("Badge Offset"),
-      item("Regimental Distinctive Insignia"),
-      item("Shoulderloop Regimental Distinctive Insignia"),
-      item("Officer Branch Insignia"),
-      item("Infantry Cord / Infantry Buttons"),
+      item("Regimental Distinctive Insignia", 0),
+      item("Shoulderloop Regimental Distinctive Insignia", 0),
+      item("Officer Branch Insignia", 0),
+      item("Infantry Cord / Infantry Buttons", 0),
       ...UNIT_CITATIONS,
     ];
 
@@ -682,7 +683,7 @@
       item("Ribbon Offset"),
       item("RDI Offset"),
       item("Badge Offset"),
-      item("Regimental Distinctive Insignia"),
+      item("Regimental Distinctive Insignia", 0),
       ...UNIT_CITATIONS,
     ];
 
@@ -701,7 +702,46 @@
     const AVIATION_BADGES = [
       item("Aviator Badge"),
       item("Aviation Badge"),
+      item("Army Astronaut Device"),
     ];
+
+    const NAMETAPE = item("Nametape", 0);
+    const RANKTAB = item("Ranktab", 0);
+    const SHOULDERLOOP_RANKTABS = item("Shoulderloop Ranktabs", 0);
+    const FREE_RDI = item("Regimental Distinctive Insignia", 0);
+
+    const CLASS_B_SHARED = {
+      ribbons: RIBBONS,
+      badges: [
+        ...ALL_SKILL_TABS,
+        ...SKILL_BADGES,
+      ],
+      foreignRibbons: [],
+      foreignBadges: [],
+    };
+
+    const CLASS_C_SHARED = {
+      ribbons: RIBBONS,
+      badges: [
+        ...SKILL_BADGES,
+        ...ALL_SKILL_TABS,
+        CSIB,
+        ...DRESS_ID_BADGES,
+      ],
+      foreignRibbons: [],
+      foreignBadges: [],
+      accessories: CLASS_C_ACCESSORIES,
+    };
+
+    const TIGER_STRIPES_SHARED = {
+      ribbons: [],
+      badges: [
+        ...SKILL_BADGES,
+        ...ALL_SKILL_TABS,
+      ],
+      foreignRibbons: [],
+      foreignBadges: [],
+    };
 
     const uniformData = {
 
@@ -761,21 +801,43 @@
         foreignRibbons: [],
         foreignBadges: [],
         accessories: [
-          item("Ranktab"),
-          item("Nametape"),
+          RANKTAB,
+          NAMETAPE,
         ],
       },
 
       "ASF Tiger Stripes": {
         basePrice: BASE_UNIFORM_PRICE,
-        ribbons: [],
-        badges: [
-          ...SKILL_BADGES,
-          ...ALL_SKILL_TABS,
+        ...TIGER_STRIPES_SHARED,
+        accessories: [],
+      },
+
+      "Rolled ASF Tiger Stripes": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ...TIGER_STRIPES_SHARED,
+        accessories: [
+          item("Watch"),
         ],
+      },
+
+      "Tiger Stripe ACS": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: OCP_STYLE_TABS_CSIB,
         foreignRibbons: [],
         foreignBadges: [],
         accessories: [],
+      },
+
+      "Rolled Tiger Stripe ACS": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ribbons: [],
+        badges: OCP_STYLE_TABS_CSIB,
+        foreignRibbons: [],
+        foreignBadges: [],
+        accessories: [
+          item("Watch"),
+        ],
       },
 
       "AGSU (Class A)": {
@@ -794,32 +856,29 @@
         accessories: AGSU_ACCESSORIES,
       },
 
-      "Class B Short Sleeve (SS)": {
+      "Class B Short Sleeve (No Tie)": {
         basePrice: BASE_UNIFORM_PRICE,
-        ribbons: RIBBONS,
-        badges: [
-          ...ALL_SKILL_TABS,
-          ...SKILL_BADGES,
-        ],
-        foreignRibbons: [],
-        foreignBadges: [],
+        ...CLASS_B_SHARED,
         accessories: [
           item("Watch"),
-          item("Regimental Distinctive Insignia"),
+          FREE_RDI,
+        ],
+      },
+
+      "Class B Short Sleeve (With Tie)": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ...CLASS_B_SHARED,
+        accessories: [
+          item("Watch"),
+          FREE_RDI,
         ],
       },
 
       "Class B Long Sleeve (LS)": {
         basePrice: BASE_UNIFORM_PRICE,
-        ribbons: RIBBONS,
-        badges: [
-          ...ALL_SKILL_TABS,
-          ...SKILL_BADGES,
-        ],
-        foreignRibbons: [],
-        foreignBadges: [],
+        ...CLASS_B_SHARED,
         accessories: [
-          item("Regimental Distinctive Insignia"),
+          FREE_RDI,
         ],
       },
 
@@ -830,23 +889,24 @@
         foreignRibbons: [],
         foreignBadges: [],
         accessories: [
-          item("Nametape"),
-          item("Shoulderloop Ranktabs"),
+          NAMETAPE,
+          SHOULDERLOOP_RANKTABS,
         ],
       },
 
-      "Class C": {
+      "Class C Short Sleeve (No Tie)": {
         basePrice: BASE_UNIFORM_PRICE,
-        ribbons: RIBBONS,
-        badges: [
-          ...SKILL_BADGES,
-          ...ALL_SKILL_TABS,
-          CSIB,
-          ...DRESS_ID_BADGES,
-        ],
-        foreignRibbons: [],
-        foreignBadges: [],
-        accessories: CLASS_C_ACCESSORIES,
+        ...CLASS_C_SHARED,
+      },
+
+      "Class C Short Sleeve (With Tie)": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ...CLASS_C_SHARED,
+      },
+
+      "Class C Long Sleeve": {
+        basePrice: BASE_UNIFORM_PRICE,
+        ...CLASS_C_SHARED,
       },
 
       "ICVC — Tanker": {
@@ -856,8 +916,8 @@
         foreignRibbons: [],
         foreignBadges: [],
         accessories: [
-          item("Nametape"),
-          item("Ranktab"),
+          NAMETAPE,
+          RANKTAB,
         ],
       },
 
@@ -868,8 +928,8 @@
         foreignRibbons: [],
         foreignBadges: [],
         accessories: [
-          item("Nametape"),
-          item("Ranktab"),
+          NAMETAPE,
+          RANKTAB,
         ],
       },
 
@@ -1009,37 +1069,64 @@
         maxTabs: 2, maxSkillBadges: 2, comboGroups: null, maxIdBadges: 0, maxForeign: 0,
         rules: "Skill Tabs max 2 · Skill Badges max 2",
       },
+      "Rolled ASF Tiger Stripes": {
+        maxTabs: 2, maxSkillBadges: 2, comboGroups: null, maxIdBadges: 0, maxForeign: 0,
+        rules: "Skill Tabs max 2 · Skill Badges max 2 · Watch authorized",
+      },
+      "Tiger Stripe ACS": {
+        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
+        rules: "Skill Tabs max 2 · CSIB authorized · No skill badges, ID badges, or ribbons",
+      },
+      "Rolled Tiger Stripe ACS": {
+        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
+        rules: "Skill Tabs max 2 · CSIB · Watch if rolled · No skill badges or ribbons",
+      },
       "AGSU (Class A)": {
         maxTabs: 2, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
         maxForeign: null, maxRibbons: null,
-        rules: "Skill Tabs max 2 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 · Ribbons unlimited · Offsets max 2 rows",
+        rules: "Skill Tabs max 2 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 · Ribbons unlimited · Offsets max 2 rows · RDI / unit citations / branch insignia free",
       },
-      "Class B Short Sleeve (SS)": {
+      "Class B Short Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
         maxForeign: 0, maxRibbons: 6,
-        rules: "Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized · RDI free/included",
+        rules: "SS no tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized · RDI free",
+      },
+      "Class B Short Sleeve (With Tie)": {
+        maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
+        maxForeign: 0, maxRibbons: 6,
+        rules: "SS with tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized · RDI free",
       },
       "Class B Long Sleeve (LS)": {
         maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
         maxForeign: 0, maxRibbons: 6,
-        rules: "Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · RDI free/included · No watch",
+        rules: "Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · RDI free · No watch",
       },
       "Class B Sweater (Winter)": {
         maxTabs: 0, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
-        rules: "Nametape & Shoulderloop Ranktabs only",
+        rules: "Nametape & Shoulderloop Ranktabs only (free)",
       },
-      "Class C": {
+      "Class C Short Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
         maxForeign: 0, maxRibbons: null, idRequiresNoCsib: true,
-        rules: "Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · Ribbons unlimited",
+        rules: "SS no tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · RDI / unit citations free",
+      },
+      "Class C Short Sleeve (With Tie)": {
+        maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
+        maxForeign: 0, maxRibbons: null, idRequiresNoCsib: true,
+        rules: "SS with tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · RDI / unit citations free",
+      },
+      "Class C Long Sleeve": {
+        maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
+        maxForeign: 0, maxRibbons: null, idRequiresNoCsib: true,
+        rules: "LS · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · RDI / unit citations free",
       },
       "ICVC — Tanker": {
         maxTabs: 0, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
-        rules: "Nametape & Ranktab only",
+        rules: "Nametape & Ranktab only (free)",
       },
       "ICVC — Pilot": {
-        maxTabs: 0, maxSkillBadges: 1, maxIdBadges: 0, maxForeign: 0, aviatorOnly: true,
-        rules: "Nametape & Ranktab · Only Aviator or Aviation Badge",
+        maxTabs: 0, maxSkillBadges: 2, comboGroups: [[3]], maxIdBadges: 0, maxForeign: 0, aviatorOnly: true,
+        rules: "Nametape & Ranktab free · Aviator / Aviation (incl. Master tiers) and Army Astronaut Device",
       },
     };
 
@@ -1512,9 +1599,10 @@ const UNIT_TREE = [
         issues.push(`Ribbons: ${ribbonCount}/${limits.maxRibbons} — exceeds max.`);
       }
       if (limits.aviatorOnly) {
-        const invalid = skill.filter(n => n !== "Aviator Badge" && n !== "Aviation Badge");
+        const allowed = new Set(["Aviator Badge", "Aviation Badge", "Army Astronaut Device"]);
+        const invalid = skill.filter(n => !allowed.has(n));
         if (invalid.length) {
-          issues.push("Pilot ICVC only allows Aviator or Aviation Badge.");
+          issues.push("Pilot ICVC only allows Aviator, Aviation, or Army Astronaut Device.");
         }
       }
       // Group 5 prohibited on OCP variants
