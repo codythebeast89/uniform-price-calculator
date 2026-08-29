@@ -1,0 +1,17 @@
+# Cloudflare Tunnel for qmc-calc API (public → Imperial :4182)
+# Create tunnel token in Zero Trust dashboard, then:
+#   echo 'TUNNEL_TOKEN=...' > .env
+#   docker compose up -d
+
+name: qmc-calc-tunnel
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: qmc-calc-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    network_mode: host
+    # host network so cloudflared can reach 127.0.0.1:4182 (qmc-calc-server)
