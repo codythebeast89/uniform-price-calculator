@@ -324,6 +324,22 @@
       opacity: 0.4;
     }
 
+    label.soft-disabled {
+      opacity: 0.55;
+    }
+
+    #copyButton:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .auth-user img {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
   </style>
 </head>
 <body>
@@ -361,10 +377,10 @@
     <div class="card">
       <h2>Final Price</h2>
 
-      <div class="price" id="finalPrice">$0</div>
+      <div class="price" id="finalPrice">R$0</div>
 
       <div class="price-note">
-        Base uniform: $150. Most ribbons, badges, and add-ons: $3 each.
+        Base uniform: R$150. Most ribbons, badges, and add-ons: R$3 each.
         RDIs, unit citations, officer branch insignia, infantry cord/buttons, nametapes, and rank tabs are free.
         <br />
         <a href="https://docs.google.com/document/d/1fc9gU7zDWnZu_3xoFPyP9NUH3D0jb9kDJG7SaAFitOM/edit" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">Uniform Guide</a>
@@ -374,6 +390,10 @@
         <a href="https://trello.com/b/o1GnoMon/quartermaster-corps-badge-information" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">Badge Information</a>
         ·
         <a href="https://docs.google.com/spreadsheets/d/1e_AqHIGrGdfNSgoHt6kLV89E6LADJmlZzhfRAUXo0wY/edit" target="_blank" rel="noopener noreferrer" style="color: #93c5fd;">QMC Database</a>
+        ·
+        <a href="privacy.html" style="color: #93c5fd;">Privacy</a>
+        ·
+        <a href="terms.html" style="color: #93c5fd;">Terms</a>
       </div>
     </div>
 
@@ -400,7 +420,7 @@
       <div class="format-fields">
         <div class="row2">
           <label>Name (Discord ID)
-            <input type="text" id="fName" placeholder="username">
+            <input type="text" id="fName" placeholder="Discord user ID or @name" autocomplete="off">
           </label>
           <label>Gender
             <select id="fGender">
@@ -1039,6 +1059,24 @@
       "Master Combat Action Badge": "Expert Soldier Badge",
     };
 
+    /** Holding Master combat badge also blocks the matching base CIB/CMB/CAB. */
+    const MASTER_BLOCKS_BASE_COMBAT = {
+      "Master Combat Infantryman Badge": "Combat Infantryman Badge",
+      "Master Combat Medical Badge": "Combat Medical Badge",
+      "Master Combat Action Badge": "Combat Action Badge",
+    };
+
+    const UNIT_CITATION_NAMES = new Set(UNIT_CITATIONS.map((u) => u.name));
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     function ordinalAwardLabel(n) {
       if (n === 1) return "1st Award";
       if (n === 2) return "2nd Award";
@@ -1071,6 +1109,18 @@
       if (a.replace(/ badges$/, " badge") === i) return true;
       if (i === "combat service identification badge" && a.startsWith("combat service identification badge")) return true;
       if (i === "driver and mechanic badge" && a.startsWith("driver and mechanic badge")) return true;
+      // Tiered: sheet "Master Aviator Badge" ↔ catalog "Aviator Badge"
+      if (TIERED_BADGES[itemName]) {
+        for (const tier of TIERED_BADGES[itemName]) {
+          const tiered = normalizeAwardKey(`${tier} ${itemName}`);
+          if (a === tiered) return true;
+        }
+        // also "Aviator Badge Master" rare ordering
+        for (const tier of TIERED_BADGES[itemName]) {
+          if (a === normalizeAwardKey(`${itemName} ${tier}`)) return true;
+        }
+      }
+      // Master combat exact family (already handled by name equality for Master items)
       return false;
     }
 
@@ -1079,10 +1129,7 @@
       for (const award of awards || []) {
         if (!awardMatchesCatalogItem(award.name, "Combat Service Identification Badge")) continue;
         const m = String(award.name).match(/\((.+)\)\s*$/);
-        if (!m) {
-          if (!units.includes("CSIB")) units.push("CSIB");
-          continue;
-        }
+        if (!m) continue; // bare CSIB without unit — skip
         const inner = m[1].replace(/\s*CSIB\s*$/i, "").trim();
         for (const part of inner.split(",")) {
           const u = part.trim().replace(/\s*CSIB\s*$/i, "").trim();
@@ -1492,21 +1539,28 @@ const UNIT_TREE = [
     }
 
     function displayBadgeName(name, tierSelect, awardSelect, csibSelect) {
-      if (earnedDisplayByItem.has(name) && name !== "Combat Service Identification Badge") {
+      if (name === "Combat Service Identification Badge") {
+        if (csibSelect && !csibSelect.disabled && csibSelect.value) {
+          return `${name} (${csibSelect.value} CSIB)`;
+        }
+        return name;
+      }
+      // Prefer live UI when tier/count controls are active (user may override sheet).
+      if ((tierSelect && !tierSelect.disabled) || (awardSelect && !awardSelect.disabled)) {
+        let out = name;
+        if (tierSelect && !tierSelect.disabled && tierSelect.value) {
+          out = `${name} (${tierSelect.value})`;
+        }
+        if (awardSelect && !awardSelect.disabled) {
+          const n = Number(awardSelect.value);
+          if (n >= 2) out = `${out} x${n}`;
+        }
+        return out;
+      }
+      if (earnedDisplayByItem.has(name)) {
         return formatAwardForTemplate(earnedDisplayByItem.get(name));
       }
-      let out = name;
-      if (tierSelect && !tierSelect.disabled && tierSelect.value) {
-        out = `${name} (${tierSelect.value})`;
-      }
-      if (awardSelect && !awardSelect.disabled) {
-        const n = Number(awardSelect.value);
-        if (n >= 2) out = `${out} x${n}`;
-      }
-      if (name === "Combat Service Identification Badge" && csibSelect && !csibSelect.disabled && csibSelect.value) {
-        out = `${name} (${csibSelect.value} CSIB)`;
-      }
-      return out;
+      return name;
     }
 
     function displayRibbonName(name) {
@@ -1682,7 +1736,7 @@ const UNIT_TREE = [
         selected[kind].push(name);
       });
 
-      const discount = Math.min(Number(fDiscAmt.value) || 0, total);
+      const discount = Math.min(Math.max(0, Number(fDiscAmt.value) || 0), total);
       if (discount > 0) total -= discount;
 
       return { selected, total, discount, selectedUniform };
@@ -1757,6 +1811,30 @@ const UNIT_TREE = [
           issues.push(`Group 5 badges are prohibited on this uniform: ${g5.join(", ")}.`);
         }
       }
+
+      const csibChecked = document.querySelector(
+        "input[type='checkbox'][data-type='Badges'][value='Combat Service Identification Badge']",
+      );
+      if (csibChecked?.checked) {
+        const csibSelect = csibChecked.parentElement?.querySelector(".csib-unit-select");
+        if (!csibSelect?.value) {
+          issues.push("CSIB requires a unit selection.");
+        }
+      }
+
+      const offsetNames = ["Ribbon Offset", "Badge Offset", "RDI Offset"];
+      const offsets = selected.Accessories.filter((n) => offsetNames.includes(n));
+      if (offsets.length > 2) {
+        issues.push(`Offsets: ${offsets.length}/2 — AGSU allows max 2 offsets.`);
+      }
+
+      // Tiger / ACS: only one combat shirt style family at a time is N/A (single uniform).
+      // Dual Master+base combat when both checked:
+      for (const [master, base] of Object.entries(MASTER_BLOCKS_BASE_COMBAT)) {
+        if (badges.includes(master) && badges.includes(base)) {
+          issues.push(`Cannot wear both ${master} and ${base}.`);
+        }
+      }
       return issues;
     }
 
@@ -1774,9 +1852,14 @@ const UNIT_TREE = [
       }
 
       if (issues.length) {
-        violationsBox.innerHTML = `<div class="violations"><strong>Uniform Guide violations</strong>${issues.map(i => `• ${i}`).join("<br>")}</div>`;
+        const list = issues.map((i) => `• ${escapeHtml(i)}`).join("<br>");
+        violationsBox.innerHTML = `<div class="violations"><strong>Uniform Guide violations</strong>${list}</div>`;
+        copyButton.disabled = true;
+        copyButton.title = "Fix Uniform Guide violations before copying";
       } else {
         violationsBox.innerHTML = "";
+        copyButton.disabled = false;
+        copyButton.title = "";
       }
 
       const badgeLines = selected.Badges.length
@@ -1920,7 +2003,10 @@ ${priceLine}
       if (earnedAwardKeys.has(key)) return true;
       // allow free default ribbons always when logged in
       if (FREE_DEFAULT_RIBBONS.some((r) => normalizeAwardKey(r) === key)) return true;
-
+      // Unit citations must be earned when logged in
+      if (UNIT_CITATION_NAMES.has(itemName)) {
+        return authProfile?.awards?.some((a) => awardMatchesCatalogItem(a.name, itemName)) || false;
+      }
       if (authProfile?.awards?.some((a) => awardMatchesCatalogItem(a.name, itemName))) {
         return true;
       }
@@ -1941,20 +2027,11 @@ ${priceLine}
         }
         return false;
       }
-
-      // tiered: "Aviator Badge (Master)" vs sheet "Master Aviator Badge" / base name
-      for (const earned of earnedAwardKeys) {
-        if (key.includes(earned) || earned.includes(key)) return true;
-      }
       return false;
     }
 
-    function hasMasterCombatThatBlocks(expertName) {
-      const master = Object.keys(MASTER_COMBAT_BLOCKS_EXPERT).find(
-        (m) => MASTER_COMBAT_BLOCKS_EXPERT[m] === expertName,
-      );
-      if (!master) return false;
-      const masterKey = normalizeAwardKey(master);
+    function hasMasterCombatSelectedOrEarned(masterName) {
+      const masterKey = normalizeAwardKey(masterName);
       if (earnedAwardKeys) {
         for (const earned of earnedAwardKeys) {
           const core = earned.replace(/\s+\d+(st|nd|rd|th) award$/i, "").trim();
@@ -1962,34 +2039,75 @@ ${priceLine}
         }
       }
       const box = document.querySelector(
-        `input[type='checkbox'][data-type='Badges'][value="${CSS.escape(master)}"]`,
+        `input[type='checkbox'][data-type='Badges'][value="${CSS.escape(masterName)}"]`,
       );
       return Boolean(box?.checked);
+    }
+
+    function hasMasterCombatThatBlocks(expertName) {
+      const master = Object.keys(MASTER_COMBAT_BLOCKS_EXPERT).find(
+        (m) => MASTER_COMBAT_BLOCKS_EXPERT[m] === expertName,
+      );
+      if (!master) return false;
+      return hasMasterCombatSelectedOrEarned(master);
+    }
+
+    function hasMasterThatBlocksBase(baseName) {
+      const master = Object.keys(MASTER_BLOCKS_BASE_COMBAT).find(
+        (m) => MASTER_BLOCKS_BASE_COMBAT[m] === baseName,
+      );
+      if (!master) return false;
+      return hasMasterCombatSelectedOrEarned(master);
     }
 
     function isOfficerPaygrade(pg) {
       return /^O\d+/i.test(String(pg || "").trim());
     }
 
+    /** Prefer the form dropdown so enlisted can test / officers can correct profile. */
     function currentPaygrade() {
-      return (authProfile?.usar?.paygrade || fPaygrade.value || "").trim();
+      return (fPaygrade.value || authProfile?.usar?.paygrade || "").trim();
     }
 
     function applyAwardLocks() {
+      const key = uniformSelect.value;
       document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
         const type = box.dataset.type;
-        if (!["Ribbons", "Badges", "Foreign Ribbons", "Foreign Badges"].includes(type)) return;
+        if (!["Ribbons", "Badges", "Foreign Ribbons", "Foreign Badges", "Accessories"].includes(type)) return;
         const label = box.parentElement;
-        const blockedByMaster = type === "Badges" && hasMasterCombatThatBlocks(box.value);
+        const blockedByMaster =
+          type === "Badges" &&
+          (hasMasterCombatThatBlocks(box.value) || hasMasterThatBlocksBase(box.value));
         const blockedAviator =
           type === "Badges" &&
           box.value === "Aviator Badge" &&
           !isOfficerPaygrade(currentPaygrade());
+        const citationLocked =
+          type === "Accessories" &&
+          earnedAwardKeys &&
+          UNIT_CITATION_NAMES.has(box.value) &&
+          !awardIsEarned(box.value);
+
+        // Soft-disable guide-illegal options (still selectable but visually marked; validation blocks copy)
+        let soft = false;
+        if (type === "Badges" && (key === "OCP (Standard)" || key === "Rolled OCP")) {
+          if (BADGE_GROUP[box.value] === 5) soft = true;
+        }
+        if (type === "Badges" && hasMasterCombatThatBlocks(box.value)) soft = true;
+        if (type === "Badges" && hasMasterThatBlocksBase(box.value)) soft = true;
+
         const earned = awardIsEarned(box.value);
-        if ((earnedAwardKeys && !earned) || blockedByMaster || blockedAviator) {
+        const hardLock =
+          (earnedAwardKeys && type !== "Accessories" && !earned) ||
+          blockedByMaster ||
+          blockedAviator ||
+          citationLocked;
+
+        if (hardLock) {
           box.checked = false;
           box.disabled = true;
           label.classList.add("locked-out");
+          label.classList.remove("soft-disabled");
           const tier = label.querySelector(".tier-select");
           if (tier) tier.disabled = true;
           const awardCount = label.querySelector(".award-count-select");
@@ -2002,6 +2120,7 @@ ${priceLine}
         } else {
           box.disabled = false;
           label.classList.remove("locked-out");
+          label.classList.toggle("soft-disabled", soft);
         }
       });
     }
@@ -2083,9 +2202,7 @@ ${priceLine}
 
     function applyProfileToForm(profile) {
       if (!profile) return;
-      if (profile.username) {
-        fName.value = profile.username;
-      }
+      // Discord ID is separate from Roblox username — leave fName for the user.
       if (profile.usar?.paygrade) {
         fPaygrade.value = profile.usar.paygrade;
         fRank.value = RANK_NAMES[profile.usar.paygrade] || profile.usar.rankName || "";
@@ -2108,8 +2225,11 @@ ${priceLine}
       const userEl = document.getElementById("authUser");
       const loginBtn = document.getElementById("loginBtn");
       const logoutBtn = document.getElementById("logoutBtn");
+      userEl.replaceChildren();
       if (!profile) {
-        userEl.innerHTML = "<span>Not logged in — awards stay open for manual pricing.</span>";
+        const span = document.createElement("span");
+        span.textContent = "Not logged in — awards stay open for manual pricing.";
+        userEl.appendChild(span);
         loginBtn.classList.remove("hidden");
         logoutBtn.classList.add("hidden");
         return;
@@ -2120,11 +2240,25 @@ ${priceLine}
       const rank = profile.usar
         ? `${profile.usar.paygrade || ""} ${profile.usar.rankName || profile.usar.roleName || ""}`.trim()
         : "USAR rank unknown";
-      userEl.innerHTML =
-        (profile.avatarUrl ? `<img src="${profile.avatarUrl}" alt="">` : "") +
-        `<div><div><strong>${profile.username}</strong></div>` +
-        `<div class="auth-meta">${rank}${unitBits.length ? " · " + unitBits.join(" · ") : ""}</div>` +
-        `<div class="auth-meta">${(profile.awards || []).length} awards loaded from QMC database</div></div>`;
+      if (profile.avatarUrl) {
+        const img = document.createElement("img");
+        img.src = profile.avatarUrl;
+        img.alt = "";
+        userEl.appendChild(img);
+      }
+      const wrap = document.createElement("div");
+      const nameDiv = document.createElement("div");
+      const strong = document.createElement("strong");
+      strong.textContent = profile.username || "";
+      nameDiv.appendChild(strong);
+      const meta1 = document.createElement("div");
+      meta1.className = "auth-meta";
+      meta1.textContent = rank + (unitBits.length ? " · " + unitBits.join(" · ") : "");
+      const meta2 = document.createElement("div");
+      meta2.className = "auth-meta";
+      meta2.textContent = `${(profile.awards || []).length} awards loaded from QMC database`;
+      wrap.append(nameDiv, meta1, meta2);
+      userEl.appendChild(wrap);
       loginBtn.classList.add("hidden");
       logoutBtn.classList.remove("hidden");
     }
@@ -2146,10 +2280,15 @@ ${priceLine}
         earnedAwardKeys = null;
         earnedDisplayByItem = new Map();
         renderAuthBar(null);
-        // Re-enable all award checkboxes
+        // Re-enable all award checkboxes and reset tier / count / CSIB UI
         document.querySelectorAll("input[type='checkbox'][data-type]").forEach((box) => {
           box.disabled = false;
-          box.parentElement.classList.remove("locked-out");
+          box.parentElement.classList.remove("locked-out", "soft-disabled");
+          const tier = box.parentElement.querySelector(".tier-select");
+          if (tier) {
+            tier.selectedIndex = 0;
+            tier.disabled = !box.checked;
+          }
           const awardCount = box.parentElement.querySelector(".award-count-select");
           if (awardCount) {
             awardCount.value = "1";
@@ -2211,6 +2350,13 @@ ${priceLine}
     updateCalculator();
 
     copyButton.addEventListener("click", async () => {
+      if (copyButton.disabled) return;
+      const issues = validateSelection(gatherSelection().selected);
+      if (issues.length) {
+        alert("Fix Uniform Guide violations before copying.");
+        updateCalculator();
+        return;
+      }
       try {
         await navigator.clipboard.writeText(templateOutput.value);
         copyButton.textContent = "Copied!";

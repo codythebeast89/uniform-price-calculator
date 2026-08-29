@@ -38,6 +38,12 @@ export function isUsarE2OrHigher(roleName) {
   return grade !== null && grade >= 2;
 }
 
+/** Officers (O1+) and E2+ have completed Basic Training. */
+export function completedBasicTraining(roleName) {
+  if (isUsarE2OrHigher(roleName)) return true;
+  return /\[O\d+[A-Z]?\]/i.test(String(roleName || ""));
+}
+
 export function hasDeploymentCombatBadge(awards) {
   return awards.some(
     (a) =>
@@ -60,7 +66,7 @@ export function applyAutoAwards(awards, { usarRoleName } = {}) {
     }
   }
 
-  if (isUsarE2OrHigher(usarRoleName)) {
+  if (completedBasicTraining(usarRoleName)) {
     for (const name of BASIC_TRAINING_AUTO_RIBBONS) {
       if (!existing.has(name)) auto.push({ category: "ribbons", name });
     }
