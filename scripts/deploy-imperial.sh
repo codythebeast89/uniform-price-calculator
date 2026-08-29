@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# Deploy QMC calculator + auth API to Imperial (Caddy reverse proxy on qmc.isd).
-# Does NOT touch forscom-website / forscom-auth.
+# Deploy QMC calculator + auth API to Imperial (Caddy on qmc.isd).
+# Standalone — does NOT touch forscom-website / forscom-auth.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-REMOTE_DIR="${REMOTE_DIR:-/opt/qmc-calc}"
-SERVICE_NAME="qmc-calc"
-CADDY_SNIPPET="$REPO_ROOT/deploy/caddy-qmc.isd.conf"
+REMOTE_DIR="${REMOTE_DIR:-/home/codyb/stacks/qmc-calc}"
 
 resolve_host() {
   if [ -n "${REMOTE_HOST:-}" ]; then
@@ -28,10 +26,11 @@ resolve_host() {
 REMOTE_HOST="$(resolve_host)"
 echo "==> Deploying to $REMOTE_HOST:$REMOTE_DIR"
 
-ssh "$REMOTE_HOST" "mkdir -p '$REMOTE_DIR/server/data' '$REMOTE_DIR/deploy'"
+ssh "$REMOTE_HOST" "mkdir -p '$REMOTE_DIR/server/data' '$REMOTE_DIR/deploy' '$HOME/.config/systemd/user'"
 
 rsync -az --delete \
   --exclude node_modules \
+  --exclude server/node_modules \
   --exclude server/data \
   --exclude server/.env \
   --exclude .git \
@@ -39,35 +38,52 @@ rsync -az --delete \
 
 ssh "$REMOTE_HOST" bash -s <<EOF
 set -euo pipefail
+export XDG_RUNTIME_DIR="\${XDG_RUNTIME_DIR:-/run/user/\$(id -u)}"
 cd '$REMOTE_DIR/server'
+
 if [ ! -f .env ]; then
   cp .env.example .env
-  echo "Created $REMOTE_DIR/server/.env — fill ROBLOX_CLIENT_ID / SECRET / JWT_SECRET"
+  # Point paths at the stacks install
+  sed -i 's|^STATIC_ROOT=.*|STATIC_ROOT=$REMOTE_DIR|' .env
+  sed -i 's|^DATA_DIR=.*|DATA_DIR=$REMOTE_DIR/server/data|' .env
+  # Generate a JWT secret if empty
+  if grep -q '^JWT_SECRET=\$" .env || grep -q '^JWT_SECRET=\$' .env || grep -q '^JWT_SECRET=$' .env; then
+    sed -i "s|^JWT_SECRET=.*|JWT_SECRET=\$(openssl rand -hex 32)|" .env
+  fi
+  echo "Created $REMOTE_DIR/server/.env — add ROBLOX_CLIENT_ID and ROBLOX_CLIENT_SECRET"
 fi
+
 npm install --omit=dev
 
-sudo cp '$REMOTE_DIR/deploy/qmc-calc.service' /etc/systemd/system/qmc-calc.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now qmc-calc.service
-sudo systemctl restart qmc-calc.service
+cp '$REMOTE_DIR/deploy/qmc-calc.service' "\$HOME/.config/systemd/user/qmc-calc.service"
+systemctl --user daemon-reload
+systemctl --user enable --now qmc-calc.service
+systemctl --user restart qmc-calc.service
 
-# Patch Caddyfile if qmc.isd block missing
 CADDY="/home/codyb/stacks/caddy/Caddyfile"
-if [ -f "\$CADDY" ] && ! grep -q 'qmc.isd' "\$CADDY"; then
-  echo "" >> "\$CADDY"
-  cat '$REMOTE_DIR/deploy/caddy-qmc.isd.conf' >> "\$CADDY"
-  docker exec caddy-proxy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null \\
-    || docker exec caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null \\
+if [ -f "\$CADDY" ] && ! grep -q '^qmc\.isd' "\$CADDY"; then
+  {
+    echo ""
+    echo "# QMC Uniform Price Calculator"
+    cat '$REMOTE_DIR/deploy/caddy-qmc.isd.conf'
+  } >> "\$CADDY"
+  docker exec caddy-proxy caddy reload --config /etc/caddy/Caddyfile \\
+    || docker exec caddy-joinqmc caddy reload --config /etc/caddy/Caddyfile \\
     || true
-  echo "Appended qmc.isd to Caddyfile and attempted reload"
+  echo "Appended qmc.isd to Caddyfile"
 else
-  echo "Caddy qmc.isd block already present (or Caddyfile not found at \$CADDY)"
+  echo "Caddy qmc.isd already present (or Caddyfile missing)"
 fi
 
 sleep 1
-curl -sf http://127.0.0.1:4182/health | head -c 400 || true
+curl -sf http://127.0.0.1:4182/health || true
 echo
+systemctl --user --no-pager --full status qmc-calc.service | head -20 || true
 EOF
 
-echo "==> Done. Open https://qmc.isd after DNS/TLS and OAuth secrets are set."
-echo "    Roblox redirect URI must be exactly: https://qmc.isd/api/auth/callback"
+echo "==> Deploy finished."
+echo "    1. Create a NEW Roblox OAuth app (not FORSCOM's)"
+echo "    2. Redirect URI: https://qmc.isd/api/auth/callback"
+echo "    3. Put CLIENT_ID / SECRET in $REMOTE_DIR/server/.env on Imperial"
+echo "    4. systemctl --user restart qmc-calc"
+echo "    5. Open https://qmc.isd"

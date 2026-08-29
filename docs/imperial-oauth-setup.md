@@ -42,7 +42,7 @@ chmod +x scripts/deploy-imperial.sh
 Then on Imperial:
 
 ```bash
-sudo nano /opt/qmc-calc/server/.env
+nano ~/stacks/qmc-calc/server/.env
 ```
 
 Set:
@@ -50,15 +50,14 @@ Set:
 ```env
 ROBLOX_CLIENT_ID=...
 ROBLOX_CLIENT_SECRET=...
-JWT_SECRET=$(openssl rand -hex 32)
-SITE_URL=https://qmc.isd
-ROBLOX_REDIRECT_URI=https://qmc.isd/api/auth/callback
 ```
+
+(`JWT_SECRET` is auto-generated on first deploy.)
 
 Restart:
 
 ```bash
-sudo systemctl restart qmc-calc
+systemctl --user restart qmc-calc
 curl -s http://127.0.0.1:4182/health
 ```
 
