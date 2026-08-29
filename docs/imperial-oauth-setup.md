@@ -2,7 +2,7 @@
 
 Standalone auth for this calculator. **Not** the FORSCOM website OAuth app.
 
-## Architecture
+Install path on Imperial: `~/stacks/qmc-calc` (user systemd unit `qmc-calc.service`).
 
 ```
 https://qmc.isd  (Caddy on Imperial)
