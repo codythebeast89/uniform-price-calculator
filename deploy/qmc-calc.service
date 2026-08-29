@@ -1,15 +1,15 @@
 [Unit]
 Description=QMC Uniform Price Calculator (OAuth + awards API)
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
-User=codyb
-WorkingDirectory=/opt/qmc-calc/server
-EnvironmentFile=/opt/qmc-calc/server/.env
+WorkingDirectory=/home/codyb/stacks/qmc-calc/server
+EnvironmentFile=/home/codyb/stacks/qmc-calc/server/.env
 ExecStart=/usr/bin/node src/server.mjs
 Restart=on-failure
-RestartSec=3
+RestartSec=5
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
