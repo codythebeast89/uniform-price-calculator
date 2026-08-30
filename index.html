@@ -1844,12 +1844,22 @@ const UNIT_TREE = [
         issues.push(`Offsets: ${offsets.length}/2 — max 2 offsets on this uniform.`);
       }
 
-      // Tiger / ACS: only one combat shirt style family at a time is N/A (single uniform).
       // Dual Master+base combat when both checked:
       for (const [master, base] of Object.entries(MASTER_BLOCKS_BASE_COMBAT)) {
         if (badges.includes(master) && badges.includes(base)) {
           issues.push(`Cannot wear both ${master} and ${base}.`);
         }
+      }
+      // Master combat blocks matching Expert badges (EIB / EFMB / ESB)
+      for (const [master, expert] of Object.entries(MASTER_COMBAT_BLOCKS_EXPERT)) {
+        if (badges.includes(master) && badges.includes(expert)) {
+          issues.push(`Cannot wear both ${master} and ${expert}.`);
+        }
+      }
+
+      // Aviator Badge is officer-only (O1+)
+      if (badges.includes("Aviator Badge") && !isOfficerPaygrade(currentPaygrade())) {
+        issues.push("Aviator Badge requires an officer paygrade (O1+).");
       }
       return issues;
     }
@@ -1892,12 +1902,16 @@ const UNIT_TREE = [
           .trim();
         return UNIT_CITATION_NAMES.has(core);
       });
+      // Only include BMT defaults that are actually checked (or absent as checkboxes).
+      const checkedDefaultRibbons = FREE_DEFAULT_RIBBONS.filter((f) =>
+        selected.Ribbons.some((r) => r === f || r.startsWith(f + " ") || r.startsWith(f + " (") || r.startsWith(f + " x")),
+      );
       const selectableRibbons = selected.Ribbons.filter(r =>
         !FREE_DEFAULT_RIBBONS.some((f) => r === f || r.startsWith(f + " ") || r.startsWith(f + " (") || r.startsWith(f + " x")),
       );
       const ribbonParts = supportsRibbons
         ? [
-            ...FREE_DEFAULT_RIBBONS.map(r => `* ${r}`),
+            ...checkedDefaultRibbons.map(r => `* ${r}`),
             ...selectableRibbons.map(r => `* ${r}`),
             ...foreignRibbons.map(r => `* ${r}`),
             ...unitCitationRibbons.map(r => `* ${r}`),
@@ -2021,6 +2035,10 @@ ${priceLine}
       history.replaceState({}, "", location.pathname);
     }
 
+    // NOTE: this lock is advisory only — it runs entirely in the visitor's own
+    // browser and can be bypassed via devtools. The order template it produces
+    // is not re-validated server-side, so QMC staff must still check the
+    // template against the awards sheet before approving an order.
     function awardIsEarned(itemName) {
       if (!earnedAwardKeys) return true;
       const key = normalizeAwardKey(itemName);
@@ -2090,25 +2108,40 @@ ${priceLine}
       return /^O\d+/i.test(String(pg || "").trim());
     }
 
-    /** Prefer the form dropdown so enlisted can test / officers can correct profile. */
+    /** Prefer profile paygrade when logged in so enlisted cannot unlock Aviator via the dropdown. */
     function currentPaygrade() {
+      if (earnedAwardKeys && authProfile?.usar?.paygrade) {
+        return String(authProfile.usar.paygrade).trim();
+      }
       return (fPaygrade.value || authProfile?.usar?.paygrade || "").trim();
     }
 
-    /** Roblox group IDs tracked as Military Police Corps (see server profile.mjs). */
-    const MPC_ROBLOX_GROUP_IDS = new Set([4929233, 33438975, 8124498, 7076400, 15531002]);
+    /**
+     * MPC command groups for MP ID (excludes CID — that unlocks CID ID only).
+     * See server profile.mjs GROUP_PATH_HINTS.
+     */
+    const MPC_ROBLOX_GROUP_IDS = new Set([4929233, 8124498, 7076400, 15531002]);
     const CID_ROBLOX_GROUP_ID = 33438975;
-
-    function profileInMpc() {
-      if (!authProfile) return false;
-      if (authProfile.unit?.path?.[0] === "Military Police Corps") return true;
-      return (authProfile.groups || []).some((g) => MPC_ROBLOX_GROUP_IDS.has(Number(g.groupId)));
-    }
 
     function profileInCid() {
       if (!authProfile) return false;
       if ((authProfile.unit?.path || []).includes("Criminal Investigations Division")) return true;
       return (authProfile.groups || []).some((g) => Number(g.groupId) === CID_ROBLOX_GROUP_ID);
+    }
+
+    function profileInMpc() {
+      if (!authProfile) return false;
+      // CID-only placement does not unlock MP ID
+      if (profileInCid() && !(authProfile.groups || []).some((g) => MPC_ROBLOX_GROUP_IDS.has(Number(g.groupId)))) {
+        return false;
+      }
+      if (
+        authProfile.unit?.path?.[0] === "Military Police Corps" &&
+        !(authProfile.unit.path || []).includes("Criminal Investigations Division")
+      ) {
+        return true;
+      }
+      return (authProfile.groups || []).some((g) => MPC_ROBLOX_GROUP_IDS.has(Number(g.groupId)));
     }
 
     /** USAR role text for staff badge checks (abbreviations matched as whole tokens). */
@@ -2173,13 +2206,11 @@ ${priceLine}
           type === "Badges" &&
           (hasMasterCombatThatBlocks(box.value) || hasMasterThatBlocksBase(box.value));
         const pg = currentPaygrade();
+        // Aviator is officer-only: block enlisted, and block empty paygrade (guests must pick O1+)
         const blockedAviator =
           type === "Badges" &&
           box.value === "Aviator Badge" &&
-          (
-            /^E\d+/i.test(pg) ||
-            (Boolean(earnedAwardKeys) && pg && !isOfficerPaygrade(pg))
-          );
+          !isOfficerPaygrade(pg);
         const citationLocked =
           type === "Accessories" &&
           earnedAwardKeys &&
@@ -2231,10 +2262,11 @@ ${priceLine}
         [...(u.ribbons || []), ...(u.badges || []), ...(u.foreignRibbons || []), ...(u.foreignBadges || [])]
           .forEach((entry) => catalogNames.add(typeof entry === "string" ? entry : entry.name));
       });
-      // Always include known singles used across uniforms
+      // Always include known singles used across uniforms (incl. unit citations for xN)
       [
         "Combat Service Identification Badge",
         "Driver and Mechanic Badge",
+        ...UNIT_CITATION_NAMES,
         ...Object.keys(TIERED_BADGES),
         ...COMBAT_BADGE_AWARDS,
       ].forEach((n) => catalogNames.add(n));
@@ -2242,7 +2274,7 @@ ${priceLine}
       for (const award of profile.awards) {
         for (const itemName of catalogNames) {
           if (!awardMatchesCatalogItem(award.name, itemName)) continue;
-          // Prefer the most detailed sheet string (devices / counts / classes)
+          // Prefer the most detailed sheet string (devices / counts / classes / xN)
           const prev = earnedDisplayByItem.get(itemName);
           if (!prev || award.name.length >= prev.length) {
             earnedDisplayByItem.set(itemName, award.name);
