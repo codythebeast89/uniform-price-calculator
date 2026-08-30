@@ -29,7 +29,7 @@ describe("unit-awards", () => {
     assert.equal(normalizeUnitKey("75th Ranger Regiment"), normalizeUnitKey("75 Ranger Regiment"));
   });
 
-  it("matches path segments to sheet units", () => {
+  it("matches path segments to sheet units (exact normalize only)", () => {
     assert.equal(
       unitPathMatchesSheetUnit(["Military Police Corps", "14th Battalion"], "Military Police Corps"),
       true,
@@ -44,6 +44,26 @@ describe("unit-awards", () => {
     assert.equal(
       unitPathMatchesSheetUnit(["Forces Command", "1st Infantry Division"], "75th Ranger Regiment"),
       false,
+    );
+    // No fuzzy substring: shortened sheet labels must not match longer path segments
+    assert.equal(
+      unitPathMatchesSheetUnit(["Forces Command", "1st Infantry Division"], "Infantry Division"),
+      false,
+    );
+    assert.equal(
+      unitPathMatchesSheetUnit(
+        ["Army Special Operations Command", "Army Special Forces"],
+        "Special Forces",
+      ),
+      false,
+    );
+    // Ranger alias still matches
+    assert.equal(
+      unitPathMatchesSheetUnit(
+        ["Army Special Operations Command", "75th Ranger Regiment"],
+        "75th Rangers Regiment",
+      ),
+      true,
     );
   });
 

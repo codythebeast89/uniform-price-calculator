@@ -28,8 +28,12 @@ You are the specialist for the USAR Quartermaster Corps uniform price calculator
 
 ## Award locks (logged-in)
 
-- Guest mode leaves awards open for manual pricing — by design; call it out in audits.
+- Guest mode leaves awards open for manual pricing — by design; QMs verify via bot in the QMC server before custom uniforms. Call guest-open out in audits; do not require server-side template enforcement unless asked.
 - **Exact** award matching only (no substring false positives like Distinguished Service ↔ Cross).
+- Unit path matching for Unit Awards is **exact** after `normalizeUnitKey` (Ranger aliases only — no fuzzy ≥5-char includes).
+- On `/api/me` failure with a stored token: clear token and show auth error (do not silent guest-open).
+- While logged in with a USAR paygrade: disable the paygrade dropdown (profile is source of truth for Aviator).
+- Logged-in CSIB unit list: sheet-parsed units only (no common-list fallback for bare CSIB).
 - **MP ID** — MPC groups / MPC path (includes CID — CID agents are MPs).
 - **CID ID** — CID group or path includes Criminal Investigations Division.
 - **Army Staff ID** — SMA, DAS, VCSA, CSA (E9C → SMA); not CJCS.

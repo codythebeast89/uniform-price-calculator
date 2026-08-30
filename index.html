@@ -1588,12 +1588,21 @@ const UNIT_TREE = [
 
     function populateCsibSelect(select) {
       const earnedUnits = parseCsibUnitsFromAwards(authProfile?.awards || []);
-      const units = earnedUnits.length ? earnedUnits : COMMON_CSIB_UNITS;
+      const loggedIn = Boolean(earnedAwardKeys);
+      // Logged-in: only sheet-listed CSIB units (no full common fallback for bare CSIB).
+      // Guests: common list for manual pricing (QMs still verify via bot).
+      const units = loggedIn ? earnedUnits : COMMON_CSIB_UNITS;
       const prev = select.value;
       select.innerHTML = "";
       const blank = document.createElement("option");
       blank.value = "";
-      blank.textContent = earnedUnits.length ? "Select your CSIB" : "Select CSIB unit";
+      if (loggedIn && !earnedUnits.length) {
+        blank.textContent = "No CSIB unit on sheet — ping QMC";
+      } else if (earnedUnits.length) {
+        blank.textContent = "Select your CSIB";
+      } else {
+        blank.textContent = "Select CSIB unit";
+      }
       select.appendChild(blank);
       units.forEach((unit) => {
         const opt = document.createElement("option");
@@ -2329,8 +2338,14 @@ ${priceLine}
       if (profile.usar?.paygrade) {
         fPaygrade.value = profile.usar.paygrade;
         fRank.value = RANK_NAMES[profile.usar.paygrade] || profile.usar.rankName || "";
-      } else if (profile.usar?.rankName) {
-        fRank.value = profile.usar.rankName;
+        fPaygrade.disabled = true;
+        fPaygrade.title = "Locked to your USAR profile while logged in";
+      } else {
+        fPaygrade.disabled = false;
+        fPaygrade.title = "";
+        if (profile.usar?.rankName) {
+          fRank.value = profile.usar.rankName;
+        }
       }
       if (profile.unit?.path?.length) {
         divisionPath = [...profile.unit.path];
@@ -2415,6 +2430,8 @@ ${priceLine}
         fProof.value = "";
         fPaygrade.value = "";
         fRank.value = "";
+        fPaygrade.disabled = false;
+        fPaygrade.title = "";
         fNametape.value = "";
         divisionPath = [];
         wireDivision();
@@ -2459,7 +2476,10 @@ ${priceLine}
           authProfile = null;
           earnedAwardKeys = null;
           earnedDisplayByItem = new Map();
+          fPaygrade.disabled = false;
+          fPaygrade.title = "";
           renderAuthBar(null);
+          applyAwardLocks();
           return;
         }
         if (!res.ok) throw new Error("me failed");
@@ -2473,7 +2493,20 @@ ${priceLine}
         updateCalculator();
       } catch (err) {
         console.warn("Auth API unavailable", err);
+        // Token present but profile failed — force logout rather than silent guest-open
+        if (getToken()) {
+          setToken("");
+          const box = document.getElementById("authError");
+          box.textContent = "Could not load your profile — logged out. Try logging in again.";
+          box.classList.remove("hidden");
+        }
+        authProfile = null;
+        earnedAwardKeys = null;
+        earnedDisplayByItem = new Map();
+        fPaygrade.disabled = false;
+        fPaygrade.title = "";
         renderAuthBar(null);
+        applyAwardLocks();
       }
     }
 

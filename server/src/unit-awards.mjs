@@ -96,21 +96,14 @@ function entryCount(entry) {
   return Math.max(1, Number(entry?.count) || 1);
 }
 
-/** True if any segment of the user's unit path matches a sheet unit label. */
+/** True if any path segment equals the sheet unit after normalize (Ranger aliases via normalizeUnitKey). */
 export function unitPathMatchesSheetUnit(unitPath, sheetUnitName) {
   const target = normalizeUnitKey(sheetUnitName);
-  if (!target || target.length < 3) return false;
+  if (!target) return false;
   const segments = (unitPath || []).map(normalizeUnitKey).filter(Boolean);
   if (!segments.length) return false;
-  const full = normalizeUnitKey(unitPath.join(" "));
-  const candidates = [...segments, full];
-  for (const seg of candidates) {
-    if (seg === target) return true;
-    if (seg.length >= 5 && target.length >= 5 && (seg.includes(target) || target.includes(seg))) {
-      return true;
-    }
-  }
-  return false;
+  if (segments.some((seg) => seg === target)) return true;
+  return normalizeUnitKey(unitPath.join(" ")) === target;
 }
 
 export function formatUnitCitationName(awardName, count) {
