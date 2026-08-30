@@ -2117,10 +2117,10 @@ ${priceLine}
     }
 
     /**
-     * MPC command groups for MP ID (excludes CID — that unlocks CID ID only).
+     * MPC command groups for MP ID (includes CID — CID agents are MPs).
      * See server profile.mjs GROUP_PATH_HINTS.
      */
-    const MPC_ROBLOX_GROUP_IDS = new Set([4929233, 8124498, 7076400, 15531002]);
+    const MPC_ROBLOX_GROUP_IDS = new Set([4929233, 33438975, 8124498, 7076400, 15531002]);
     const CID_ROBLOX_GROUP_ID = 33438975;
 
     function profileInCid() {
@@ -2131,16 +2131,7 @@ ${priceLine}
 
     function profileInMpc() {
       if (!authProfile) return false;
-      // CID-only placement does not unlock MP ID
-      if (profileInCid() && !(authProfile.groups || []).some((g) => MPC_ROBLOX_GROUP_IDS.has(Number(g.groupId)))) {
-        return false;
-      }
-      if (
-        authProfile.unit?.path?.[0] === "Military Police Corps" &&
-        !(authProfile.unit.path || []).includes("Criminal Investigations Division")
-      ) {
-        return true;
-      }
+      if (authProfile.unit?.path?.[0] === "Military Police Corps") return true;
       return (authProfile.groups || []).some((g) => MPC_ROBLOX_GROUP_IDS.has(Number(g.groupId)));
     }
 
