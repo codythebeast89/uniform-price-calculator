@@ -18,7 +18,7 @@ Browser → https://codythebeast89.github.io/uniform-price-calculator/
 | Public API | `https://qmc-api.imperialnode.net` |
 | DNS | Cloudflare zone `imperialnode.net` → Imperial WAN `76.22.96.245` (DNS only) |
 | TLS / proxy | `caddy-joinqmc` on Imperial → `10.0.1.150:4182` |
-| Pages config | repo `api-config.json` → `apiBase` |
+| Pages config | GitHub Actions secret `QMC_API_BASE` → generated `api-config.json` |
 
 Optional **Cloudflare Tunnel** (`deploy/cloudflared/`) is supported if you prefer no WAN DNAT for HTTP — needs a Zero Trust tunnel token with *Cloudflare Tunnel Edit* permission. Public Caddy is the default path.
 
@@ -47,11 +47,22 @@ curl -s https://qmc-api.imperialnode.net/health
 
 ## GitHub Pages
 
-`api-config.json` must be committed and pushed:
+`api-config.json` is **gitignored** (contains API URLs and keys). Copy the example locally:
+
+```bash
+cp api-config.example.json api-config.json
+# edit api-config.json — set apiBase, templateApiBase, templateApiKey
+```
+
+For GitHub Pages deploys, generate `api-config.json` at build time (e.g. GitHub Actions from repository secrets) or host the calculator on Imperial where the file lives on disk.
+
+Example shape:
 
 ```json
 {
-  "apiBase": "https://qmc-api.imperialnode.net"
+  "apiBase": "https://qmc-api.imperialnode.net",
+  "templateApiBase": "http://imperialserver:8787",
+  "templateApiKey": "your-the template report service-api-key"
 }
 ```
 

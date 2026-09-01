@@ -41,6 +41,8 @@ const CLIENT_ID = process.env.ROBLOX_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.ROBLOX_CLIENT_SECRET || "";
 const JWT_SECRET = process.env.JWT_SECRET || "";
 const MIN_ACCOUNT_AGE_DAYS = Number(process.env.MIN_ACCOUNT_AGE_DAYS || 30);
+const TEMPLATE_API_BASE = (process.env.TEMPLATE_API_BASE || "").replace(/\/$/, "");
+const TEMPLATE_API_KEY = process.env.TEMPLATE_API_KEY || "";
 const USAR_GID = Number(process.env.USAR_GROUP_ID || USAR_GROUP_ID);
 const SECURE_COOKIES = process.env.SECURE_COOKIES !== "0";
 const DEFAULT_RETURN_TO = (
@@ -76,6 +78,18 @@ const ALLOWED_RETURN_PREFIXES = (
 
 const rateBuckets = new Map();
 
+/** True for an IPv4 (optionally ::ffff:-mapped) address inside 172.16.0.0/12 —
+ *  the Docker bridge range the deploy script's UFW rule actually allows into
+ *  :4182 (`ufw allow from 172.16.0.0/12 ...`). Matching the real CIDR instead
+ *  of a bare "172." prefix keeps this in lockstep with that firewall rule. */
+function isDockerBridgePeer(ip) {
+  const v4 = ip.replace(/^::ffff:/, "");
+  const m = v4.match(/^172\.(\d{1,3})\.\d{1,3}\.\d{1,3}$/);
+  if (!m) return false;
+  const second = Number(m[1]);
+  return second >= 16 && second <= 31;
+}
+
 function clientKey(req) {
   // Prefer peer address from the reverse proxy hop. Only trust XFF when the
   // immediate peer is loopback/Docker (Caddy), and take the last hop Caddy set.
@@ -84,8 +98,7 @@ function clientKey(req) {
     peer === "127.0.0.1" ||
     peer === "::1" ||
     peer === "::ffff:127.0.0.1" ||
-    peer.startsWith("172.") ||
-    peer.startsWith("::ffff:172.");
+    isDockerBridgePeer(peer);
   if (trustedProxy) {
     const xf = String(req.headers["x-forwarded-for"] || "")
       .split(",")
@@ -135,6 +148,22 @@ function corsHeaders(req) {
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   };
+}
+
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on("data", (c) => chunks.push(c));
+    req.on("end", () => {
+      try {
+        const raw = Buffer.concat(chunks).toString("utf8");
+        resolve(raw ? JSON.parse(raw) : {});
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on("error", reject);
+  });
 }
 
 function json(res, status, body, extraHeaders = {}) {
@@ -373,6 +402,47 @@ async function handleLogout(req, res) {
   redirect(res, returnTo, [clearSessionCookie()]);
 }
 
+async function handleTemplateReport(req, res) {
+  const headers = corsHeaders(req);
+  if (!TEMPLATE_API_BASE || !TEMPLATE_API_KEY) {
+    return json(res, 503, { error: "template_api_not_configured" }, headers);
+  }
+  const session = await readSession(req);
+  if (!session) return json(res, 401, { error: "unauthorized" }, headers);
+  if (!rateLimit(`template-report:${session.userId || clientKey(req)}`, 30, 60_000)) {
+    return json(res, 429, { error: "rate_limited" }, headers);
+  }
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    return json(res, 400, { error: "invalid_json" }, headers);
+  }
+  const payload = {
+    roblox_user_id: Number(session.userId),
+    roblox_username: session.username,
+    display_name: session.displayName,
+    discord_name: body.discord_name || null,
+    discord_proof: body.discord_proof || null,
+    profile: body.profile || null,
+  };
+  try {
+    const upstream = await fetch(`${TEMPLATE_API_BASE}/v1/integrations/qmc/template`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": TEMPLATE_API_KEY,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await upstream.json().catch(() => ({}));
+    return json(res, upstream.status, data, headers);
+  } catch (err) {
+    console.error("template report forward failed", err);
+    return json(res, 502, { error: "template_api_unreachable" }, headers);
+  }
+}
+
 async function handler(req, res) {
   const url = new URL(req.url || "/", SITE_URL);
   const headers = corsHeaders(req);
@@ -401,6 +471,9 @@ async function handler(req, res) {
   }
   if (req.method === "GET" && url.pathname === "/api/me") {
     return handleMe(req, res);
+  }
+  if (req.method === "POST" && url.pathname === "/api/template/report") {
+    return handleTemplateReport(req, res);
   }
   if (req.method === "POST" && url.pathname === "/api/awards/sync") {
     const session = await readSession(req);

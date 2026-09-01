@@ -1,0 +1,41 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate api-config.json
+        env:
+          QMC_API_BASE: ${{ secrets.QMC_API_BASE }}
+        run: |
+          if [ -z "$QMC_API_BASE" ]; then
+            echo "QMC_API_BASE secret is required" >&2
+            exit 1
+          fi
+          printf '%s\n' "{\"apiBase\":\"${QMC_API_BASE}\"}" > api-config.json
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

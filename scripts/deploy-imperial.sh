@@ -78,10 +78,11 @@ upsert_env LOGIN_FAIL_CLOSED_AGE "0"
 upsert_env BIND_HOST "0.0.0.0"
 upsert_env STATIC_ROOT "$REMOTE_DIR"
 upsert_env DATA_DIR "${REMOTE_DIR}/server/data"
+upsert_env TEMPLATE_API_BASE "http://127.0.0.1:8787"
 
 npm install --omit=dev
 
-cp "$REMOTE_DIR/deploy/qmc-calc.service" "$HOME/.config/systemd/user/qmc-calc.service"
+sed "s|__REMOTE_DIR__|$REMOTE_DIR|g" "$REMOTE_DIR/deploy/qmc-calc.service" > "$HOME/.config/systemd/user/qmc-calc.service"
 systemctl --user daemon-reload
 systemctl --user enable --now qmc-calc.service
 systemctl --user restart qmc-calc.service
@@ -202,5 +203,5 @@ echo "    1. Create a NEW Roblox OAuth app (not FORSCOM's)"
 echo "    2. Redirect URI: $PUBLIC_API_HOST/api/auth/callback"
 echo "    3. Put CLIENT_ID / SECRET in $REMOTE_DIR/server/.env on Imperial"
 echo "    4. systemctl --user restart qmc-calc"
-echo "    5. Commit/push api-config.json so GitHub Pages points at the API"
+echo "    5. Copy api-config.example.json → api-config.json locally (gitignored); set API URLs/keys"
 echo "    Docs: docs/cloudflare-tunnel-oauth.md"

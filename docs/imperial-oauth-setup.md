@@ -42,7 +42,7 @@ curl -s https://qmc-api.imperialnode.net/health
 
 ## 3. Verify
 
-1. Open https://codythebeast89.github.io/uniform-price-calculator/ (after pushing `api-config.json`)
+1. Open https://codythebeast89.github.io/uniform-price-calculator/ (after configuring local `api-config.json` (see `api-config.example.json`))
 2. Click **Log in with Roblox**
 3. Complete OAuth — must be in USAR group `3108077`, account age ≥ 30 days
 4. Calculator should fill username, paygrade, unit path hint, and lock awards to the QMC database

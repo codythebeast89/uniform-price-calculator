@@ -2,5 +2,6 @@ node_modules/
 server/node_modules/
 server/.env
 server/data/
+api-config.json
 *.log
 .DS_Store
