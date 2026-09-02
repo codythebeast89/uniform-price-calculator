@@ -558,6 +558,12 @@
 
     const item = (name, price = DEFAULT_PRICE) => ({ name, price });
 
+    const WATCH_ACCESSORIES = [
+      item("Watch (Brown)"),
+      item("Watch (Black)"),
+      item("Watch (Tan)"),
+    ];
+
     // Ribbon list aligned with the QMC Database.
     // Free defaults (auto with BMT): National Defense, GWOT Service, Army Service.
     const RIBBONS = [
@@ -788,7 +794,7 @@
         foreignRibbons: [],
         foreignBadges: FOREIGN_BADGES,
         accessories: [
-          item("Watch"),
+          ...WATCH_ACCESSORIES,
         ],
       },
 
@@ -808,7 +814,7 @@
         foreignRibbons: [],
         foreignBadges: [],
         accessories: [
-          item("Watch"),
+          ...WATCH_ACCESSORIES,
         ],
       },
 
@@ -828,7 +834,7 @@
         foreignRibbons: [],
         foreignBadges: [],
         accessories: [
-          item("Watch"),
+          ...WATCH_ACCESSORIES,
         ],
       },
 
@@ -854,7 +860,7 @@
         basePrice: BASE_UNIFORM_PRICE,
         ...TIGER_STRIPES_SHARED,
         accessories: [
-          item("Watch"),
+          ...WATCH_ACCESSORIES,
         ],
       },
 
@@ -874,7 +880,7 @@
         foreignRibbons: [],
         foreignBadges: [],
         accessories: [
-          item("Watch"),
+          ...WATCH_ACCESSORIES,
         ],
       },
 
@@ -899,7 +905,7 @@
         basePrice: BASE_UNIFORM_PRICE,
         ...CLASS_B_SHARED,
         accessories: [
-          item("Watch"),
+          ...WATCH_ACCESSORIES,
           FREE_RDI,
         ],
       },
@@ -908,7 +914,7 @@
         basePrice: BASE_UNIFORM_PRICE,
         ...CLASS_B_SHARED,
         accessories: [
-          item("Watch"),
+          ...WATCH_ACCESSORIES,
           FREE_RDI,
         ],
       },
@@ -1184,7 +1190,7 @@
       },
       "Rolled OCP": {
         maxTabs: 2, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
-        maxForeign: 1, rules: "Same as OCP · Watch authorized · Skill Badges max 4 (1 combined from Groups 1–3) · Group 5 prohibited",
+        maxForeign: 1, rules: "Same as OCP · Watch authorized (Brown, Black, or Tan) · Skill Badges max 4 (1 combined from Groups 1–3) · Group 5 prohibited",
       },
       "Army Combat Shirt (ACS)": {
         maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
@@ -1192,7 +1198,7 @@
       },
       "Rolled ACS": {
         maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
-        rules: "Skill Tabs max 2 · CSIB · Watch if rolled · No skill badges or ribbons",
+        rules: "Skill Tabs max 2 · CSIB · Watch if rolled (Brown, Black, or Tan) · No skill badges or ribbons",
       },
       "ASOC Blackouts": {
         maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
@@ -1200,7 +1206,7 @@
       },
       "Rolled ASOC Blackouts": {
         maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
-        rules: "Skill Tabs max 2 · CSIB · Watch if rolled · No skill badges or ribbons",
+        rules: "Skill Tabs max 2 · CSIB · Watch if rolled (Brown, Black, or Tan) · No skill badges or ribbons",
       },
       "Army Fleece (Winter)": {
         maxTabs: 0, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
@@ -1208,11 +1214,13 @@
       },
       "ASF Tiger Stripes": {
         maxTabs: 2, maxSkillBadges: 2, comboGroups: null, maxIdBadges: 0, maxForeign: 0,
-        rules: "Skill Tabs max 2 · Skill Badges max 2",
+        rules: "Skill Tabs max 2 · Skill Badges max 2 (not 4 badges)",
+        enforceSkillTabSplit: true,
       },
       "Rolled ASF Tiger Stripes": {
         maxTabs: 2, maxSkillBadges: 2, comboGroups: null, maxIdBadges: 0, maxForeign: 0,
-        rules: "Skill Tabs max 2 · Skill Badges max 2 · Watch authorized",
+        rules: "Skill Tabs max 2 · Skill Badges max 2 (not 4 badges) · Watch authorized (Brown, Black, or Tan)",
+        enforceSkillTabSplit: true,
       },
       "Tiger Stripe ACS": {
         maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
@@ -1220,7 +1228,7 @@
       },
       "Rolled Tiger Stripe ACS": {
         maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
-        rules: "Skill Tabs max 2 · CSIB · Watch if rolled · No skill badges or ribbons",
+        rules: "Skill Tabs max 2 · CSIB · Watch if rolled (Brown, Black, or Tan) · No skill badges or ribbons",
       },
       "AGSU (Class A)": {
         maxTabs: 2, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
@@ -1230,12 +1238,12 @@
       "Class B Short Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
         maxForeign: 0, maxRibbons: 6,
-        rules: "SS no tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized · RDI free",
+        rules: "SS no tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized (Brown, Black, or Tan) · RDI free",
       },
       "Class B Short Sleeve (With Tie)": {
         maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
         maxForeign: 0, maxRibbons: 6,
-        rules: "SS with tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized · RDI free",
+        rules: "SS with tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized (Brown, Black, or Tan) · RDI free",
       },
       "Class B Long Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
@@ -1304,7 +1312,11 @@ const UNIT_TREE = [
     {name:'1st Cavalry Division', combative:'Combative',
       note:"Tankers/Operators may only earn a CAB while engaged in ground combat — operating a vehicle during a deployment doesn't qualify for a combat device.",
       children:[
-        {name:'Ironhorse Brigade', role:'Infantry', badge:'cib'},
+        {name:'Ironhorse Brigade', role:'Mixed', children:[
+          {name:'Saber Company', role:'Mixed', badge:'cib'},
+          {name:'Lancer Company', role:'Infantry', badge:'cib'},
+          {name:'Stallion Company', role:'Cavalry', badge:'cab'}
+        ]},
         {name:'Greywolf Brigade', role:'Mixed', children:[
           {name:'Warhorse Company', role:'Armored', badge:'cab'},
           {name:'Nighthawks Company', role:'Cavalry', badge:'cab'},
@@ -1326,7 +1338,8 @@ const UNIT_TREE = [
         {name:'Eagle Company', role:'Infantry', badge:'cib'}
       ]},
       {name:'Black Hats Brigade', role:'Infantry-TU', children:[
-        {name:'Orpheus Company', role:'Infantry-TU', badge:'cib'}
+        {name:'Orpheus Company', role:'Infantry-TU', badge:'cib'},
+        {name:'Eurydice Company', role:'Infantry-TU', badge:'cib'}
       ]}
     ]},
     {name:'101st Airborne Division', combative:'Combative', children:[
@@ -1384,7 +1397,10 @@ const UNIT_TREE = [
         {name:'Aviation Element', role:'Aviation', badge:'cab'}
       ]},
       {name:'Special Operations Support Company', role:'Special Forces-TU', badge:'cib'}
-    ]}
+    ]},
+    {name:'160th Special Operations Aviation Regiment', combative:'Combative', role:'Aviation', badge:'cab'},
+    {name:'Orbital Readiness Battalion', combative:'Combative', role:'Mixed', badge:'cib'},
+    {name:'42nd Orbital Operations Division', combative:'Combative', role:'Mixed', badge:'cib'}
   ]},
   {name:'Training and Doctrine Command', children:[
     {name:'165th Infantry Brigade', role:'Adjutant', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.', children:[
@@ -1399,7 +1415,9 @@ const UNIT_TREE = [
       {name:'Army Recruiter Course', role:'Adjutant-TU', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
       {name:'Expert Soldier Badge Course', role:'Adjutant-TU', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
       {name:'Combat Readiness Course', role:'Adjutant-TU', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'}
-    ]}
+    ]},
+    {name:'Combined Arms Centre', role:'Adjutant', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
+    {name:'Center for Initial Military Training', role:'Adjutant', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'}
   ]},
   {name:'Military Police Corps', children:[
     {name:'Criminal Investigations Division', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.', children:[
@@ -1414,11 +1432,14 @@ const UNIT_TREE = [
     {name:'503rd Battalion', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.', children:[
       {name:'Special Reaction Team', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'},
       {name:'Executive Protection Detail', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'}
-    ]}
+    ]},
+    {name:'Army Corrections Command', role:'Military Police', combative:'Non-combative', badge:'cab', note:'Combative division has to be present for deployment credit.'}
   ]},
   {name:'Army Administrative Command', children:[
     {name:'Army Foreign Affairs'},
     {name:'Quartermaster Corps'},
+    {name:'Office of the Deputy Chief of Staff'},
+    {name:'Army Service Component Commands'},
     {name:'Community Staff'}
   ]}
 ];
@@ -1541,12 +1562,29 @@ const UNIT_TREE = [
 
     wireDivision();
 
-    function classifyBadge(name) {
-      const core = String(name || "")
-        .replace(/ \([^)]+\)$/, "")
+    function badgeCoreName(name) {
+      let core = String(name || "")
         .replace(/ x\d+$/i, "")
-        .replace(/ Badges$/i, " Badge")
         .trim();
+      for (const [base, tiers] of Object.entries(TIERED_BADGES)) {
+        if (!core.startsWith(base)) continue;
+        for (const tier of tiers) {
+          const suffix = ` (${tier})`;
+          if (core.endsWith(suffix)) {
+            core = base;
+            break;
+          }
+        }
+      }
+      if (core.startsWith("Combat Service Identification Badge")) {
+        return "Combat Service Identification Badge";
+      }
+      core = core.replace(/ \([^)]+\)$/, "").trim();
+      return core.replace(/ Badges$/i, " Badge").trim();
+    }
+
+    function classifyBadge(name) {
+      const core = badgeCoreName(name);
       if (core === "Combat Service Identification Badge" || /\bCSIB\b/i.test(name)) return "csib";
       if (TAB_NAMES.has(core)) return "tab";
       if (ID_BADGE_NAMES.has(core)) return "id";
@@ -1631,6 +1669,8 @@ const UNIT_TREE = [
         checkbox.value = itemName;
         checkbox.dataset.type = type;
         checkbox.dataset.price = itemPrice;
+        const watchMatch = /^Watch \((Brown|Black|Tan)\)$/.exec(itemName);
+        if (watchMatch) checkbox.dataset.watchColor = watchMatch[1];
 
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(`${itemName} (R$${itemPrice})`));
@@ -1683,7 +1723,14 @@ const UNIT_TREE = [
           select.addEventListener("change", updateCalculator);
           label.appendChild(select);
         } else {
-          checkbox.addEventListener("change", updateCalculator);
+          checkbox.addEventListener("change", () => {
+            if (checkbox.dataset.watchColor && checkbox.checked) {
+              container.querySelectorAll("input[data-watch-color]").forEach((other) => {
+                if (other !== checkbox) other.checked = false;
+              });
+            }
+            updateCalculator();
+          });
         }
 
         container.appendChild(label);
@@ -1787,11 +1834,19 @@ const UNIT_TREE = [
         !FREE_DEFAULT_RIBBONS.some((f) => r === f || r.startsWith(f + " ") || r.startsWith(f + " (") || r.startsWith(f + " x")),
       ).length;
 
+      const splitLabel = limits.enforceSkillTabSplit
+        ? " — Tiger Stripes allow max 2 skill badges and 2 skill tabs"
+        : "";
       if (limits.maxTabs != null && tabs.length > limits.maxTabs) {
-        issues.push(`Skill Tabs: ${tabs.length}/${limits.maxTabs} — exceeds max.`);
+        issues.push(`Skill Tabs: ${tabs.length}/${limits.maxTabs} — exceeds max${splitLabel}.`);
       }
       if (limits.maxSkillBadges != null && skill.length > limits.maxSkillBadges) {
-        issues.push(`Skill Badges: ${skill.length}/${limits.maxSkillBadges} — exceeds max.`);
+        issues.push(`Skill Badges: ${skill.length}/${limits.maxSkillBadges} — exceeds max${splitLabel}.`);
+      }
+      if (limits.enforceSkillTabSplit && tabs.length + skill.length > limits.maxTabs + limits.maxSkillBadges) {
+        issues.push(
+          `Skill wear: ${skill.length} badge(s) + ${tabs.length} tab(s) — max ${limits.maxSkillBadges} badges and ${limits.maxTabs} tabs.`,
+        );
       }
       if (limits.comboSkill) {
         const combo = tabs.length + skill.length;
@@ -1801,7 +1856,7 @@ const UNIT_TREE = [
       }
       if (limits.comboGroups) {
         limits.comboGroups.forEach(groupSet => {
-          const hits = skill.filter(n => groupSet.includes(BADGE_GROUP[n]));
+          const hits = skill.filter((n) => groupSet.includes(BADGE_GROUP[badgeCoreName(n)]));
           if (hits.length > 1) {
             issues.push(`Only 1 badge allowed from Groups ${groupSet.join("/")}: ${hits.join(", ")}.`);
           }
@@ -1832,7 +1887,7 @@ const UNIT_TREE = [
       }
       // Group 5 prohibited on OCP variants
       if (key === "OCP (Standard)" || key === "Rolled OCP") {
-        const g5 = skill.filter(n => BADGE_GROUP[n] === 5);
+        const g5 = skill.filter((n) => BADGE_GROUP[badgeCoreName(n)] === 5);
         if (g5.length) {
           issues.push(`Group 5 badges are prohibited on this uniform: ${g5.join(", ")}.`);
         }
@@ -1846,6 +1901,11 @@ const UNIT_TREE = [
         if (!csibSelect?.value) {
           issues.push("CSIB requires a unit selection.");
         }
+      }
+
+      const watches = selected.Accessories.filter((n) => /^Watch \(/i.test(n));
+      if (watches.length > 1) {
+        issues.push(`Select only one watch color (${watches.join(", ")}).`);
       }
 
       const offsetNames = ["Ribbon Offset", "Badge Offset", "RDI Offset"];
