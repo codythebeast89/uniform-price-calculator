@@ -39,6 +39,7 @@ export async function buildSessionProfile(session, deps) {
 
 export function buildTemplateReportPayload(session, body, profile) {
   return {
+    schema_version: 1,
     roblox_user_id: Number(session.userId),
     roblox_username: session.username,
     display_name: session.displayName,

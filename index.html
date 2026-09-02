@@ -82,6 +82,27 @@
       gap: 10px;
     }
 
+    .badge-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .badge-group-heading {
+      margin: 16px 0 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #93c5fd;
+    }
+
+    .badge-sections > .badge-group-heading:first-child {
+      margin-top: 0;
+    }
+
+    .badge-group {
+      margin-bottom: 4px;
+    }
+
     label {
       display: flex;
       align-items: center;
@@ -485,7 +506,7 @@
     <div class="card hidden" id="badgesCard">
       <h2>Badges</h2>
 
-      <div class="checkbox-group" id="badgesContainer"></div>
+      <div class="badge-sections" id="badgesContainer"></div>
     </div>
 
     <!-- FOREIGN RIBBONS -->
@@ -687,6 +708,12 @@
       item("Joint Chiefs Identification Badge"),
     ];
 
+    /** All identification badges (OCP + dress-only). */
+    const ALL_ID_BADGES = [
+      ...OCP_ID_BADGES,
+      ...DRESS_ID_BADGES,
+    ];
+
     const CSIB = item("Combat Service Identification Badge");
     const SERVICE_STRIPE = item("Service Stripe");
     const OVERSEAS_BAR = item("Overseas Bar");
@@ -759,7 +786,7 @@
         DRIVER_MECHANIC_BADGE,
         ...ALL_SKILL_TABS,
         CSIB,
-        ...DRESS_ID_BADGES,
+        ...ALL_ID_BADGES,
       ],
       foreignRibbons: [],
       foreignBadges: [],
@@ -892,7 +919,7 @@
           DRIVER_MECHANIC_BADGE,
           ...ALL_SKILL_TABS,
           CSIB,
-          ...DRESS_ID_BADGES,
+          ...ALL_ID_BADGES,
           SERVICE_STRIPE,
           OVERSEAS_BAR,
         ],
@@ -1181,6 +1208,19 @@
       "Army Staff Identification Badge",
       "Joint Chiefs Identification Badge",
     ]);
+
+    const BADGE_SECTION_ORDER = [
+      { key: "tab", title: "Skill Tabs" },
+      { key: "g1", title: "Group 1 — Combat" },
+      { key: "g2", title: "Group 2 — Expert" },
+      { key: "g3", title: "Group 3 — Aviation" },
+      { key: "g4", title: "Group 4 — Airborne & Pathfinder" },
+      { key: "g5", title: "Group 5 — Driver, Marksmanship & P100" },
+      { key: "id", title: "Identification Badges" },
+      { key: "csib", title: "Combat Service Identification Badge (CSIB)" },
+      { key: "service", title: "Service Stripe & Overseas Bar" },
+      { key: "other", title: "Other" },
+    ];
 
     // Per-uniform wear limits (from Uniform Guide / QMC console rules).
     const UNIFORM_LIMITS = {
@@ -1593,6 +1633,15 @@ const UNIT_TREE = [
       return "other";
     }
 
+    function getBadgeSectionKey(name) {
+      const kind = classifyBadge(name);
+      if (kind === "skill") {
+        const group = BADGE_GROUP[badgeCoreName(name)];
+        if (group) return `g${group}`;
+      }
+      return kind;
+    }
+
     function displayBadgeName(name, tierSelect, awardSelect, csibSelect) {
       if (name === "Combat Service Identification Badge") {
         if (csibSelect && !csibSelect.disabled && csibSelect.value) {
@@ -1737,6 +1786,43 @@ const UNIT_TREE = [
       });
     }
 
+    function createGroupedBadges(container, items, type) {
+      container.innerHTML = "";
+      const buckets = new Map();
+      for (const entry of items) {
+        const itemName = typeof entry === "string" ? entry : entry.name;
+        const key = getBadgeSectionKey(itemName);
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key).push(entry);
+      }
+      const sectionTitle = new Map(BADGE_SECTION_ORDER.map((s) => [s.key, s.title]));
+      const used = new Set();
+      for (const { key, title } of BADGE_SECTION_ORDER) {
+        const groupItems = buckets.get(key);
+        if (!groupItems?.length) continue;
+        used.add(key);
+        const heading = document.createElement("h3");
+        heading.className = "badge-group-heading";
+        heading.textContent = title;
+        container.appendChild(heading);
+        const groupEl = document.createElement("div");
+        groupEl.className = "badge-group checkbox-group";
+        container.appendChild(groupEl);
+        createCheckboxes(groupEl, groupItems, type);
+      }
+      for (const [key, groupItems] of buckets) {
+        if (used.has(key) || !groupItems.length) continue;
+        const heading = document.createElement("h3");
+        heading.className = "badge-group-heading";
+        heading.textContent = sectionTitle.get(key) || "Other";
+        container.appendChild(heading);
+        const groupEl = document.createElement("div");
+        groupEl.className = "badge-group checkbox-group";
+        container.appendChild(groupEl);
+        createCheckboxes(groupEl, groupItems, type);
+      }
+    }
+
     uniformSelect.addEventListener("change", () => {
       const selectedUniform = uniformData[uniformSelect.value];
 
@@ -1764,7 +1850,7 @@ const UNIT_TREE = [
 
       if (selectedUniform.badges.length > 0) {
         badgesCard.classList.remove("hidden");
-        createCheckboxes(badgesContainer, selectedUniform.badges, "Badges");
+        createGroupedBadges(badgesContainer, selectedUniform.badges, "Badges");
       }
 
       if (selectedUniform.foreignRibbons.length > 0) {

@@ -28,14 +28,17 @@
   {"col": "CF", "sheet": "Ribbons Database"},
   {"col": "CI", "sheet": "Ribbons Database"},
   {"col": "CO", "sheet": "Ribbons Database"},
+  {"col": "CR", "sheet": "Ribbons Database"},
   {"col": "CU", "sheet": "Ribbons Database"},
   {"col": "CX", "sheet": "Ribbons Database"},
   {"col": "DA", "sheet": "Ribbons Database"},
   {"col": "DD", "sheet": "Ribbons Database"},
   {"col": "DG", "sheet": "Ribbons Database"},
   {"col": "DJ", "sheet": "Ribbons Database"},
+  {"col": "DM", "sheet": "Ribbons Database"},
   {"col": "DP", "sheet": "Ribbons Database"},
   {"col": "DS", "sheet": "Ribbons Database"},
+  {"col": "DV", "sheet": "Ribbons Database"},
   {"col": "DY", "sheet": "Ribbons Database"},
   {"col": "EB", "sheet": "Ribbons Database"},
   {"col": "C", "sheet": "Badges Database"},
@@ -80,5 +83,7 @@
   {"col": "U", "sheet": "Foreign Awards Database"},
   {"col": "X", "sheet": "Foreign Awards Database"},
   {"col": "AA", "sheet": "Foreign Awards Database"},
-  {"col": "AD", "sheet": "Foreign Awards Database"}
+  {"col": "AD", "sheet": "Foreign Awards Database"},
+  {"col": "AG", "sheet": "Foreign Awards Database"},
+  {"col": "AJ", "sheet": "Foreign Awards Database"}
 ]
