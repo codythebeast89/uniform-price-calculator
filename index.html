@@ -2012,16 +2012,13 @@ ${priceLine}
     async function reportTemplateCopy() {
       if (!getToken()) return;
       const discordName = fName.value.trim();
-      const discordProof = fProof.value.trim();
-      if (!discordName && !discordProof) return;
+      if (!discordName) return;
       try {
         await fetch(apiUrl("/api/template/report"), {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authHeaders() },
           body: JSON.stringify({
-            discord_name: discordName || null,
-            discord_proof: discordProof || null,
-            profile: authProfile || null,
+            discord_name: discordName,
           }),
         });
       } catch (_) {

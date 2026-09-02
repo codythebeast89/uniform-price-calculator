@@ -43,7 +43,6 @@ export function buildTemplateReportPayload(session, body, profile) {
     roblox_username: session.username,
     display_name: session.displayName,
     discord_name: body.discord_name || null,
-    discord_proof: body.discord_proof || null,
     profile,
   };
 }

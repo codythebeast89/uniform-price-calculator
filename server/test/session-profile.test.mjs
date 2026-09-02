@@ -23,4 +23,5 @@ test("buildTemplateReportPayload uses server profile, not client body", () => {
   assert.equal(payload.profile.username, "codythebeast89");
   assert.notEqual(payload.profile.userId, "999");
   assert.equal(payload.discord_name, "111");
+  assert.equal(payload.discord_proof, undefined);
 });
