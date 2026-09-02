@@ -2019,6 +2019,7 @@ ${priceLine}
           headers: { "Content-Type": "application/json", ...authHeaders() },
           body: JSON.stringify({
             discord_name: discordName,
+            profile: authProfile || null,
           }),
         });
       } catch (_) {
