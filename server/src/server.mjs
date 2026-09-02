@@ -23,6 +23,7 @@ import {
   sessionCookieName,
 } from "./session.mjs";
 import { buildProfile, USAR_GROUP_ID } from "./profile.mjs";
+import { buildTemplateReportPayload, buildSessionProfile } from "./session-profile.mjs";
 import { syncAwards, loadAwardsCache, getAwardsForUsername, getAwardsStatus, startAwardsRefresh } from "./awards.mjs";
 import { sanitizeReturnTo as sanitizeReturnToImpl } from "./sanitize-return.mjs";
 
@@ -359,37 +360,14 @@ async function handleMe(req, res) {
   const headers = corsHeaders(req);
   if (!session) return json(res, 401, { error: "unauthorized" }, headers);
 
-  let groups = [];
-  try {
-    groups = await fetchUserGroups(session.userId);
-  } catch (err) {
-    console.error("group fetch failed", err);
-  }
-
-  const profile = buildProfile({
-    username: session.username,
-    displayName: session.displayName,
-    userId: session.userId,
-    avatarUrl: session.avatarUrl || null,
-    groups,
+  const profile = await buildSessionProfile(session, {
+    fetchUserGroups,
+    buildProfile,
+    getAwardsForUsername,
+    getAwardsStatus,
   });
 
-  const usarRoleName = profile.usar?.roleName || null;
-  const awards = getAwardsForUsername(session.username, {
-    usarRoleName,
-    unitPath: profile.unit?.path || [],
-  });
-
-  json(
-    res,
-    200,
-    {
-      ...profile,
-      awards,
-      awardsStatus: getAwardsStatus(),
-    },
-    headers,
-  );
+  json(res, 200, profile, headers);
 }
 
 async function handleLogout(req, res) {
@@ -418,14 +396,13 @@ async function handleTemplateReport(req, res) {
   } catch {
     return json(res, 400, { error: "invalid_json" }, headers);
   }
-  const payload = {
-    roblox_user_id: Number(session.userId),
-    roblox_username: session.username,
-    display_name: session.displayName,
-    discord_name: body.discord_name || null,
-    discord_proof: body.discord_proof || null,
-    profile: body.profile || null,
-  };
+  const profile = await buildSessionProfile(session, {
+    fetchUserGroups,
+    buildProfile,
+    getAwardsForUsername,
+    getAwardsStatus,
+  });
+  const payload = buildTemplateReportPayload(session, body, profile);
   try {
     const upstream = await fetch(`${TEMPLATE_API_BASE}/v1/integrations/qmc/template`, {
       method: "POST",
