@@ -219,7 +219,8 @@
 
     .tier-select,
     .award-count-select,
-    .csib-unit-select {
+    .csib-unit-select,
+    .cjs-count-select {
       margin-left: auto;
       padding: 4px 8px;
       border-radius: 6px;
@@ -232,7 +233,8 @@
 
     .tier-select:disabled,
     .award-count-select:disabled,
-    .csib-unit-select:disabled {
+    .csib-unit-select:disabled,
+    .cjs-count-select:disabled {
       opacity: 0.45;
     }
 
@@ -1049,6 +1051,12 @@
       "Army Instructor Identification Badge": ["Basic", "Senior", "Master"],
     };
 
+    /** Badges that may show Combat Jump Stars (CJS) from the sheet or UI. */
+    const CJS_BADGES = new Set([
+      "Army Parachutist Badge",
+      "Military Freefall Badge",
+    ]);
+
     const BADGE_GROUP = {
       "Combat Infantryman Badge": 1,
       "Master Combat Infantryman Badge": 1,
@@ -1144,6 +1152,30 @@
         .replace(/\s*\((\d+)(?:st|nd|rd|th)\s+Award\)\s*/gi, (_, n) => (Number(n) >= 2 ? ` x${n}` : ""))
         .replace(/\s+/g, " ")
         .trim();
+    }
+
+    function cjsDisplayPhrase(count) {
+      const n = Number(count) || 0;
+      if (n <= 0) return "";
+      if (n === 1) return "Combat Jump Star";
+      return `${n} Combat Jump Stars`;
+    }
+
+    function parseCjsCountFromAwardName(name) {
+      const s = String(name || "");
+      const multi = s.match(/(\d+)\s+Combat Jump Stars/i);
+      if (multi) return Math.min(5, Math.max(1, Number(multi[1])));
+      if (/Combat Jump Star/i.test(s)) return 1;
+      return 0;
+    }
+
+    function appendCjsToBadgeLabel(label, count) {
+      const phrase = cjsDisplayPhrase(count);
+      if (!phrase) return label;
+      if (label.includes("(")) {
+        return label.replace(/\)\s*$/, `, ${phrase})`);
+      }
+      return `${label} (${phrase})`;
     }
 
     function awardMatchesCatalogItem(awardName, itemName) {
@@ -1642,15 +1674,19 @@ const UNIT_TREE = [
       return kind;
     }
 
-    function displayBadgeName(name, tierSelect, awardSelect, csibSelect) {
+    function displayBadgeName(name, tierSelect, awardSelect, csibSelect, cjsSelect) {
       if (name === "Combat Service Identification Badge") {
         if (csibSelect && !csibSelect.disabled && csibSelect.value) {
           return `${name} (${csibSelect.value} CSIB)`;
         }
         return name;
       }
-      // Prefer live UI when tier/count controls are active (user may override sheet).
-      if ((tierSelect && !tierSelect.disabled) || (awardSelect && !awardSelect.disabled)) {
+      // Prefer live UI when tier/count/CJS controls are active (user may override sheet).
+      const uiActive =
+        (tierSelect && !tierSelect.disabled) ||
+        (awardSelect && !awardSelect.disabled) ||
+        (cjsSelect && !cjsSelect.disabled);
+      if (uiActive) {
         let out = name;
         if (tierSelect && !tierSelect.disabled && tierSelect.value) {
           out = `${name} (${tierSelect.value})`;
@@ -1658,6 +1694,9 @@ const UNIT_TREE = [
         if (awardSelect && !awardSelect.disabled) {
           const n = Number(awardSelect.value);
           if (n >= 2) out = `${out} x${n}`;
+        }
+        if (cjsSelect && !cjsSelect.disabled) {
+          out = appendCjsToBadgeLabel(out, Number(cjsSelect.value));
         }
         return out;
       }
@@ -1734,12 +1773,32 @@ const UNIT_TREE = [
             opt.textContent = tier;
             select.appendChild(opt);
           });
+          let cjsSelect = null;
+          if (CJS_BADGES.has(itemName)) {
+            cjsSelect = document.createElement("select");
+            cjsSelect.className = "cjs-count-select";
+            cjsSelect.title = "Combat Jump Stars (QMC sheet CJS notation)";
+            cjsSelect.disabled = true;
+            const noneOpt = document.createElement("option");
+            noneOpt.value = "0";
+            noneOpt.textContent = "No jump stars";
+            cjsSelect.appendChild(noneOpt);
+            for (let n = 1; n <= 5; n++) {
+              const opt = document.createElement("option");
+              opt.value = String(n);
+              opt.textContent = n === 1 ? "1 Combat Jump Star" : `${n} Combat Jump Stars`;
+              cjsSelect.appendChild(opt);
+            }
+            cjsSelect.addEventListener("change", updateCalculator);
+          }
           checkbox.addEventListener("change", () => {
             select.disabled = !checkbox.checked;
+            if (cjsSelect) cjsSelect.disabled = !checkbox.checked;
             updateCalculator();
           });
           select.addEventListener("change", updateCalculator);
           label.appendChild(select);
+          if (cjsSelect) label.appendChild(cjsSelect);
         } else if (combatAwards) {
           const select = document.createElement("select");
           select.className = "award-count-select";
@@ -1888,10 +1947,11 @@ const UNIT_TREE = [
         const tier = box.parentElement.querySelector(".tier-select");
         const awardCount = box.parentElement.querySelector(".award-count-select");
         const csibSelect = box.parentElement.querySelector(".csib-unit-select");
+        const cjsSelect = box.parentElement.querySelector(".cjs-count-select");
         const kind = box.dataset.type;
         const name = kind === "Ribbons" || kind === "Foreign Ribbons"
           ? displayRibbonName(box.value)
-          : displayBadgeName(box.value, tier, awardCount, csibSelect);
+          : displayBadgeName(box.value, tier, awardCount, csibSelect, cjsSelect);
         selected[kind].push(name);
       });
 
@@ -2411,6 +2471,11 @@ ${priceLine}
           }
           const csibSelect = label.querySelector(".csib-unit-select");
           if (csibSelect) csibSelect.disabled = true;
+          const cjsSelect = label.querySelector(".cjs-count-select");
+          if (cjsSelect) {
+            cjsSelect.value = "0";
+            cjsSelect.disabled = true;
+          }
         } else {
           box.disabled = false;
           label.classList.remove("locked-out");
@@ -2493,6 +2558,14 @@ ${priceLine}
             if (master) tierSelect.value = master;
           }
           tierSelect.disabled = false;
+        }
+
+        if (match && CJS_BADGES.has(itemName)) {
+          const cjsSelect = box.parentElement.querySelector(".cjs-count-select");
+          if (cjsSelect) {
+            cjsSelect.value = String(parseCjsCountFromAwardName(match.name));
+            cjsSelect.disabled = false;
+          }
         }
       });
     }
