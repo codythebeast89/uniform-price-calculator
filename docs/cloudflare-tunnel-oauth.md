@@ -47,23 +47,24 @@ curl -s https://qmc-api.imperialnode.net/health
 
 ## GitHub Pages
 
-`api-config.json` is **gitignored** (contains API URLs and keys). Copy the example locally:
+`api-config.json` is **gitignored**. Production builds use GitHub Actions (`.github/workflows/pages.yml`) with the repository secret **`QMC_API_BASE`** — only the public API URL is injected:
+
+```json
+{ "apiBase": "https://qmc-api.imperialnode.net" }
+```
+
+Local dev:
 
 ```bash
 cp api-config.example.json api-config.json
-# edit api-config.json — set apiBase, templateApiBase, templateApiKey
 ```
 
-For GitHub Pages deploys, generate `api-config.json` at build time (e.g. GitHub Actions from repository secrets) or host the calculator on Imperial where the file lives on disk.
+**Template-report API credentials never go in `api-config.json`.** Copy Template reports Discord IDs via the authenticated QMC proxy (`POST /api/template/report`). Configure on Imperial only:
 
-Example shape:
-
-```json
-{
-  "apiBase": "https://qmc-api.imperialnode.net",
-  "templateApiBase": "http://imperialserver:8787",
-  "templateApiKey": "your-the template report service-api-key"
-}
+```bash
+# ~/stacks/qmc-calc/server/.env
+TEMPLATE_API_BASE=http://127.0.0.1:8787
+TEMPLATE_API_KEY=<api key for the template report service>
 ```
 
 ## Optional: Cloudflare Tunnel instead of public Caddy
