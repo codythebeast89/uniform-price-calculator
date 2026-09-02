@@ -5,8 +5,10 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/codyb/stacks/qmc-calc/server
-EnvironmentFile=/home/codyb/stacks/qmc-calc/server/.env
+# __REMOTE_DIR__ is substituted with the real deploy path by
+# scripts/deploy-imperial.sh at install time — do not hardcode a real path here.
+WorkingDirectory=__REMOTE_DIR__/server
+EnvironmentFile=__REMOTE_DIR__/server/.env
 ExecStart=/usr/bin/node src/server.mjs
 Restart=on-failure
 RestartSec=5

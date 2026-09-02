@@ -26,6 +26,7 @@ import { buildProfile, USAR_GROUP_ID } from "./profile.mjs";
 import { buildTemplateReportPayload, buildSessionProfile } from "./session-profile.mjs";
 import { syncAwards, loadAwardsCache, getAwardsForUsername, getAwardsStatus, startAwardsRefresh } from "./awards.mjs";
 import { sanitizeReturnTo as sanitizeReturnToImpl } from "./sanitize-return.mjs";
+import { readJsonBody } from "./json-body.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SERVER_ROOT = join(__dirname, "..");
@@ -149,22 +150,6 @@ function corsHeaders(req) {
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   };
-}
-
-function readJsonBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on("data", (c) => chunks.push(c));
-    req.on("end", () => {
-      try {
-        const raw = Buffer.concat(chunks).toString("utf8");
-        resolve(raw ? JSON.parse(raw) : {});
-      } catch (err) {
-        reject(err);
-      }
-    });
-    req.on("error", reject);
-  });
 }
 
 function json(res, status, body, extraHeaders = {}) {
@@ -393,7 +378,10 @@ async function handleTemplateReport(req, res) {
   let body;
   try {
     body = await readJsonBody(req);
-  } catch {
+  } catch (err) {
+    if (err?.code === "PAYLOAD_TOO_LARGE") {
+      return json(res, 413, { error: "payload_too_large" }, headers);
+    }
     return json(res, 400, { error: "invalid_json" }, headers);
   }
   const profile = await buildSessionProfile(session, {

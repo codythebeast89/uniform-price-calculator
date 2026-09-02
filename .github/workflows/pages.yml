@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate api-config.json
+      - name: Build Pages site
         env:
           QMC_API_BASE: ${{ secrets.QMC_API_BASE }}
         run: |
@@ -31,11 +31,13 @@ jobs:
             echo "QMC_API_BASE secret is required" >&2
             exit 1
           fi
-          printf '%s\n' "{\"apiBase\":\"${QMC_API_BASE}\"}" > api-config.json
+          mkdir -p _site
+          cp index.html privacy.html terms.html _site/
+          printf '%s\n' "{\"apiBase\":\"${QMC_API_BASE}\"}" > _site/api-config.json
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
       - id: deployment
         uses: actions/deploy-pages@v4
