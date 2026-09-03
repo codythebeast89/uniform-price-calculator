@@ -43,6 +43,7 @@ const CLIENT_ID = process.env.ROBLOX_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.ROBLOX_CLIENT_SECRET || "";
 const JWT_SECRET = process.env.JWT_SECRET || "";
 const MIN_ACCOUNT_AGE_DAYS = Number(process.env.MIN_ACCOUNT_AGE_DAYS || 30);
+/** External template-report API (server-side only — never expose in Pages config). */
 const TEMPLATE_API_BASE = (process.env.TEMPLATE_API_BASE || "").replace(/\/$/, "");
 const TEMPLATE_API_KEY = process.env.TEMPLATE_API_KEY || "";
 const USAR_GID = Number(process.env.USAR_GROUP_ID || USAR_GROUP_ID);

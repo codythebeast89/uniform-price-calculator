@@ -79,6 +79,12 @@ upsert_env BIND_HOST "0.0.0.0"
 upsert_env STATIC_ROOT "$REMOTE_DIR"
 upsert_env DATA_DIR "${REMOTE_DIR}/server/data"
 upsert_env TEMPLATE_API_BASE "http://127.0.0.1:8787"
+# One-time migrate prior template API key env names, then drop them
+if grep -q '^TEMPLATE_API_KEY=' .env 2>/dev/null && ! grep -q '^TEMPLATE_API_KEY=' .env 2>/dev/null; then
+  KEY_VAL=$(grep -m1 '^TEMPLATE_API_KEY=' .env | cut -d= -f2-)
+  upsert_env TEMPLATE_API_KEY "$KEY_VAL"
+fi
+sed -i '/^TEMPLATE_API_BASE=/d;/^TEMPLATE_API_KEY=/d' .env 2>/dev/null || true
 
 npm install --omit=dev
 

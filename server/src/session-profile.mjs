@@ -1,5 +1,5 @@
 /**
- * Build the authenticated profile payload shared by /api/me and template report reports.
+ * Build the authenticated profile payload shared by /api/me and Copy Template reports.
  */
 export async function buildSessionProfile(session, deps) {
   const {
