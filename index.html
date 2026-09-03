@@ -2197,6 +2197,10 @@ ${priceLine}
       history.replaceState({}, "", location.pathname + location.search);
     }
 
+    function isGithubPagesHost() {
+      return /\.github\.io$/i.test(location.hostname);
+    }
+
     async function loadApiBase() {
       try {
         const res = await fetch("api-config.json", { cache: "no-store" });
@@ -2208,7 +2212,8 @@ ${priceLine}
           if (API_BASE) return;
         }
       } catch (_) {}
-      // Same-origin fallback (qmc.isd / local server)
+      // Same-origin fallback only for Imperial / LAN / local — never github.io
+      // (absolute /api/... would hit the Pages root and 404).
       API_BASE = "";
     }
 
@@ -2647,6 +2652,13 @@ ${priceLine}
       const loginBtn = document.getElementById("loginBtn");
       const logoutBtn = document.getElementById("logoutBtn");
       loginBtn.onclick = () => {
+        if (!API_BASE && isGithubPagesHost()) {
+          const box = document.getElementById("authError");
+          box.textContent =
+            "Login API is not configured (missing api-config.json). Re-run the GitHub Pages workflow deploy.";
+          box.classList.remove("hidden");
+          return;
+        }
         const returnTo = encodeURIComponent(PAGES_RETURN);
         location.href = apiUrl("/api/auth/roblox?returnTo=" + returnTo);
       };
