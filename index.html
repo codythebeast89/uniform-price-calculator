@@ -66,6 +66,109 @@
       margin-top: 20px;
     }
 
+    .price-lines {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #94a3b8;
+      border-top: 1px dashed #334155;
+      padding-top: 10px;
+    }
+
+    .price-lines:empty {
+      display: none;
+    }
+
+    .price-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 2px 0;
+    }
+
+    .price-line .amt {
+      color: #e2e8f0;
+      white-space: nowrap;
+    }
+
+    .price-line .amt.free {
+      color: #86efac;
+    }
+
+    .price-line .amt.disc {
+      color: #86efac;
+    }
+
+    .format-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .card .format-head h2 {
+      margin: 0;
+      margin-bottom: 0;
+    }
+
+    .stamp {
+      flex: none;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 2px solid;
+      padding: 4px 10px;
+      border-radius: 6px;
+      transform: rotate(-3deg);
+    }
+
+    .stamp.ready {
+      color: #86efac;
+      border-color: #4ade80;
+      background: rgba(74, 222, 128, 0.08);
+    }
+
+    .stamp.hold {
+      color: #fca5a5;
+      border-color: #f87171;
+      background: rgba(248, 113, 113, 0.12);
+    }
+
+    .badge-group-heading .cnt {
+      font-weight: 400;
+      color: #94a3b8;
+      font-size: 0.85em;
+      margin-left: 6px;
+    }
+
+    .qty-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .qty-row .qty-label {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .qty-input {
+      width: 72px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #374151;
+      background: #1f2937;
+      color: white;
+      font-size: 14px;
+    }
+
+    .qty-input:disabled {
+      opacity: 0.45;
+    }
+
     select {
       width: 100%;
       padding: 12px;
@@ -403,6 +506,8 @@
 
       <div class="price" id="finalPrice">R$0</div>
 
+      <div class="price-lines" id="priceLines"></div>
+
       <div class="price-note">
         Base uniform: R$150. Most ribbons, badges, and add-ons: R$3 each.
         RDIs, unit citations, officer branch insignia, infantry cord/buttons, nametapes, and rank tabs are free.
@@ -439,7 +544,10 @@
 
     <!-- ORDER TEMPLATE -->
     <div class="card">
-      <h2>Ordering Template</h2>
+      <div class="format-head">
+        <h2>Ordering Template</h2>
+        <span id="stampBadge" class="stamp ready">Ready</span>
+      </div>
 
       <div class="format-fields">
         <div class="row2">
@@ -1039,6 +1147,20 @@
       "Global War on Terrorism Service",
       "Army Service",
     ];
+
+    const GWOT_EXPEDITIONARY = "Global War on Terrorism Expeditionary";
+    /** CSIB or combat badges unlock free GWOT-E (console Uniform Guide rule). */
+    const DEPLOYMENT_BADGE_CORES = new Set([
+      "Combat Service Identification Badge",
+      "Combat Infantryman Badge",
+      "Master Combat Infantryman Badge",
+      "Combat Medical Badge",
+      "Master Combat Medical Badge",
+      "Combat Action Badge",
+      "Master Combat Action Badge",
+    ]);
+    const QTY_BADGE_ITEMS = new Set(["Service Stripe", "Overseas Bar"]);
+    const QTY_BADGE_MAX = 8;
 
     const TIERED_BADGES = {
       "Aviator Badge": ["Basic", "Senior", "Master"],
@@ -1655,14 +1777,38 @@ const UNIT_TREE = [
       return core.replace(/ Badges$/i, " Badge").trim();
     }
 
+    function stripQtyBadgeName(name) {
+      return String(name || "")
+        .replace(/^\d+\s+/, "")
+        .replace(/\bStripes\b/i, "Stripe")
+        .replace(/\bBars\b/i, "Bar")
+        .trim();
+    }
+
     function classifyBadge(name) {
-      const core = badgeCoreName(name);
+      const core = badgeCoreName(stripQtyBadgeName(name));
       if (core === "Combat Service Identification Badge" || /\bCSIB\b/i.test(name)) return "csib";
       if (TAB_NAMES.has(core)) return "tab";
       if (ID_BADGE_NAMES.has(core)) return "id";
       if (core === "Service Stripe" || core === "Overseas Bar") return "service";
       if (BADGE_GROUP[core] || BADGE_GROUP[name]) return "skill";
       return "other";
+    }
+
+    function hasDeploymentBadgeSelected() {
+      return [...document.querySelectorAll("input[type='checkbox'][data-type='Badges']:checked")]
+        .some((box) => DEPLOYMENT_BADGE_CORES.has(badgeCoreName(box.value)));
+    }
+
+    function qtyBadgeLabel(itemName, qty) {
+      if (qty <= 0) return "";
+      if (itemName === "Service Stripe") {
+        return qty === 1 ? "1 Service Stripe" : `${qty} Service Stripes`;
+      }
+      if (itemName === "Overseas Bar") {
+        return qty === 1 ? "1 Overseas Bar" : `${qty} Overseas Bars`;
+      }
+      return `${qty} ${itemName}`;
     }
 
     function getBadgeSectionKey(name) {
@@ -1747,6 +1893,35 @@ const UNIT_TREE = [
       items.forEach(entry => {
         const itemName = typeof entry === "string" ? entry : entry.name;
         const itemPrice = typeof entry === "string" ? DEFAULT_PRICE : entry.price;
+
+        if (type === "Badges" && QTY_BADGE_ITEMS.has(itemName)) {
+          const row = document.createElement("label");
+          row.className = "qty-row";
+          const caption = document.createElement("span");
+          caption.className = "qty-label";
+          caption.textContent = `${itemName} (R$${itemPrice} each, max ${QTY_BADGE_MAX})`;
+          const input = document.createElement("input");
+          input.type = "number";
+          input.className = "qty-input";
+          input.min = "0";
+          input.max = String(QTY_BADGE_MAX);
+          input.value = "0";
+          input.dataset.type = type;
+          input.dataset.qtyItem = itemName;
+          input.dataset.price = String(itemPrice);
+          input.addEventListener("input", () => {
+            let n = Number(input.value);
+            if (!Number.isFinite(n)) n = 0;
+            n = Math.max(0, Math.min(QTY_BADGE_MAX, Math.floor(n)));
+            input.value = String(n);
+            updateCalculator();
+          });
+          row.appendChild(caption);
+          row.appendChild(input);
+          container.appendChild(row);
+          return;
+        }
+
         const tiers = TIERED_BADGES[itemName];
         const combatAwards = COMBAT_BADGE_AWARDS.has(itemName);
         const isCsib = itemName === "Combat Service Identification Badge";
@@ -1862,10 +2037,15 @@ const UNIT_TREE = [
         used.add(key);
         const heading = document.createElement("h3");
         heading.className = "badge-group-heading";
-        heading.textContent = title;
+        heading.dataset.sectionKey = key;
+        heading.appendChild(document.createTextNode(title));
+        const cnt = document.createElement("span");
+        cnt.className = "cnt";
+        heading.appendChild(cnt);
         container.appendChild(heading);
         const groupEl = document.createElement("div");
         groupEl.className = "badge-group checkbox-group";
+        groupEl.dataset.sectionKey = key;
         container.appendChild(groupEl);
         createCheckboxes(groupEl, groupItems, type);
       }
@@ -1873,13 +2053,69 @@ const UNIT_TREE = [
         if (used.has(key) || !groupItems.length) continue;
         const heading = document.createElement("h3");
         heading.className = "badge-group-heading";
-        heading.textContent = sectionTitle.get(key) || "Other";
+        heading.dataset.sectionKey = key;
+        heading.appendChild(document.createTextNode(sectionTitle.get(key) || "Other"));
+        const cnt = document.createElement("span");
+        cnt.className = "cnt";
+        heading.appendChild(cnt);
         container.appendChild(heading);
         const groupEl = document.createElement("div");
         groupEl.className = "badge-group checkbox-group";
+        groupEl.dataset.sectionKey = key;
         container.appendChild(groupEl);
         createCheckboxes(groupEl, groupItems, type);
       }
+    }
+
+    function updateBadgeSectionCounters() {
+      const limits = UNIFORM_LIMITS[uniformSelect.value] || {};
+      let skillSelected = 0;
+      document.querySelectorAll("#badgesContainer .badge-group[data-section-key^='g']").forEach((group) => {
+        skillSelected += group.querySelectorAll("input[type='checkbox']:checked").length;
+      });
+
+      let skillTotalShown = false;
+      document.querySelectorAll("#badgesContainer .badge-group-heading").forEach((heading) => {
+        const key = heading.dataset.sectionKey || "";
+        const cntEl = heading.querySelector(".cnt");
+        const group = heading.nextElementSibling;
+        if (!cntEl || !group || !group.classList.contains("badge-group")) return;
+
+        const checked = group.querySelectorAll("input[type='checkbox']:checked").length;
+        const qtyTotal = [...group.querySelectorAll("input.qty-input")].reduce(
+          (sum, el) => sum + (Number(el.value) || 0),
+          0,
+        );
+
+        if (key === "tab") {
+          cntEl.textContent = limits.maxTabs != null ? `${checked} / ${limits.maxTabs}` : String(checked);
+          return;
+        }
+        if (key.startsWith("g")) {
+          if (!skillTotalShown) {
+            cntEl.textContent = skillSelected
+              ? (limits.maxSkillBadges != null ? `${skillSelected} / ${limits.maxSkillBadges}` : String(skillSelected))
+              : "";
+            skillTotalShown = true;
+          } else {
+            cntEl.textContent = checked ? String(checked) : "";
+          }
+          return;
+        }
+        if (key === "id") {
+          cntEl.textContent = limits.maxIdBadges != null ? `${checked} / ${limits.maxIdBadges}` : String(checked);
+          return;
+        }
+        if (key === "csib") {
+          cntEl.textContent = String(checked);
+          return;
+        }
+        if (key === "service") {
+          cntEl.textContent = String(qtyTotal);
+          return;
+        }
+        cntEl.textContent = (checked || qtyTotal) ? String(checked || qtyTotal) : "";
+      });
     }
 
     uniformSelect.addEventListener("change", () => {
@@ -1938,12 +2174,29 @@ const UNIT_TREE = [
         "Foreign Badges": [],
         Accessories: [],
       };
+      const lines = [];
       let total = 0;
       const selectedUniform = uniformData[uniformSelect.value];
-      if (selectedUniform) total += selectedUniform.basePrice || 0;
+      if (selectedUniform) {
+        const base = selectedUniform.basePrice || 0;
+        total += base;
+        lines.push({ label: `${uniformSelect.value || "Uniform"} (base)`, amt: base });
+      }
+
+      const deployment = hasDeploymentBadgeSelected();
+      let gwotEFree = false;
+      const counts = {
+        tabs: 0,
+        skill: 0,
+        id: 0,
+        csib: 0,
+        ribbons: 0,
+        foreign: 0,
+        accessories: 0,
+      };
 
       document.querySelectorAll("input[type='checkbox']:checked").forEach(box => {
-        total += Number(box.dataset.price);
+        const unitPrice = Number(box.dataset.price) || 0;
         const tier = box.parentElement.querySelector(".tier-select");
         const awardCount = box.parentElement.querySelector(".award-count-select");
         const csibSelect = box.parentElement.querySelector(".csib-unit-select");
@@ -1952,13 +2205,70 @@ const UNIT_TREE = [
         const name = kind === "Ribbons" || kind === "Foreign Ribbons"
           ? displayRibbonName(box.value)
           : displayBadgeName(box.value, tier, awardCount, csibSelect, cjsSelect);
+
+        if (kind === "Ribbons" && box.value === GWOT_EXPEDITIONARY && deployment) {
+          gwotEFree = true;
+          selected[kind].push(name);
+          return;
+        }
+
+        total += unitPrice;
         selected[kind].push(name);
+
+        if (kind === "Badges") {
+          const cls = classifyBadge(box.value);
+          if (cls === "tab") counts.tabs += 1;
+          else if (cls === "skill") counts.skill += 1;
+          else if (cls === "id") counts.id += 1;
+          else if (cls === "csib") counts.csib += 1;
+          else lines.push({ label: name, amt: unitPrice });
+        } else if (kind === "Ribbons") {
+          if (unitPrice > 0) counts.ribbons += 1;
+          else lines.push({ label: `${name} (free)`, amt: 0, free: true });
+        } else if (kind === "Foreign Ribbons" || kind === "Foreign Badges") {
+          counts.foreign += 1;
+        } else if (kind === "Accessories") {
+          if (unitPrice > 0) counts.accessories += 1;
+          else lines.push({ label: `${name} (free)`, amt: 0, free: true });
+        }
+      });
+
+      if (counts.tabs) lines.push({ label: `Skill Tabs (${counts.tabs})`, amt: counts.tabs * DEFAULT_PRICE });
+      if (counts.skill) lines.push({ label: `Skill Badges (${counts.skill})`, amt: counts.skill * DEFAULT_PRICE });
+      if (counts.csib) lines.push({ label: "Combat Service Identification Badge", amt: DEFAULT_PRICE });
+      if (counts.id) lines.push({ label: `Identification Badges (${counts.id})`, amt: counts.id * DEFAULT_PRICE });
+      if (counts.ribbons) lines.push({ label: `Ribbons (${counts.ribbons})`, amt: counts.ribbons * DEFAULT_PRICE });
+      if (gwotEFree) {
+        lines.push({
+          label: "GWOT Expeditionary (free — deployment badge attached)",
+          amt: 0,
+          free: true,
+        });
+      }
+      if (counts.foreign) lines.push({ label: `Foreign awards (${counts.foreign})`, amt: counts.foreign * DEFAULT_PRICE });
+      if (counts.accessories) {
+        lines.push({ label: `Accessories (${counts.accessories})`, amt: counts.accessories * DEFAULT_PRICE });
+      }
+
+      document.querySelectorAll("input.qty-input[data-qty-item]").forEach((input) => {
+        const qty = Math.max(0, Math.min(QTY_BADGE_MAX, Math.floor(Number(input.value) || 0)));
+        if (qty <= 0) return;
+        const itemName = input.dataset.qtyItem;
+        const unitPrice = Number(input.dataset.price) || DEFAULT_PRICE;
+        const amt = qty * unitPrice;
+        total += amt;
+        const label = qtyBadgeLabel(itemName, qty);
+        selected.Badges.push(label);
+        lines.push({ label, amt });
       });
 
       const discount = Math.min(Math.max(0, Number(fDiscAmt.value) || 0), total);
-      if (discount > 0) total -= discount;
+      if (discount > 0) {
+        total -= discount;
+        lines.push({ label: "Discount applied", amt: -discount, disc: true });
+      }
 
-      return { selected, total, discount, selectedUniform };
+      return { selected, total, discount, selectedUniform, lines };
     }
 
     function validateSelection(selected) {
@@ -2060,6 +2370,13 @@ const UNIT_TREE = [
         issues.push(`Offsets: ${offsets.length}/2 — max 2 offsets on this uniform.`);
       }
 
+      document.querySelectorAll("input.qty-input[data-qty-item]").forEach((input) => {
+        const qty = Number(input.value) || 0;
+        if (qty > QTY_BADGE_MAX) {
+          issues.push(`${input.dataset.qtyItem}: ${qty}/${QTY_BADGE_MAX} — exceeds max.`);
+        }
+      });
+
       // Dual Master+base combat when both checked:
       for (const [master, base] of Object.entries(MASTER_BLOCKS_BASE_COMBAT)) {
         if (badges.includes(master) && badges.includes(base)) {
@@ -2081,11 +2398,57 @@ const UNIT_TREE = [
     }
 
     function updateCalculator() {
-      const { selected, total, discount, selectedUniform } = gatherSelection();
+      const { selected, total, discount, selectedUniform, lines } = gatherSelection();
       const issues = validateSelection(selected);
       const limits = UNIFORM_LIMITS[uniformSelect.value];
 
       finalPrice.textContent = `R$${total}`;
+
+      const priceLines = document.getElementById("priceLines");
+      if (priceLines) {
+        priceLines.innerHTML = (lines || []).map((l) => {
+          const cls = l.free ? "amt free" : l.disc ? "amt disc" : "amt";
+          const amtText = l.disc
+            ? `-R$${Math.abs(l.amt)}`
+            : `R$${l.amt}`;
+          return `<div class="price-line"><span>${escapeHtml(l.label)}</span><span class="${cls}">${amtText}</span></div>`;
+        }).join("");
+      }
+
+      const stamp = document.getElementById("stampBadge");
+      if (stamp) {
+        if (!uniformSelect.value) {
+          stamp.textContent = "Ready";
+          stamp.className = "stamp ready";
+        } else if (issues.length) {
+          stamp.textContent = "Hold — QM Review";
+          stamp.className = "stamp hold";
+        } else {
+          stamp.textContent = "Ready";
+          stamp.className = "stamp ready";
+        }
+      }
+
+      updateBadgeSectionCounters();
+
+      const gwotBox = document.querySelector(
+        "input[type='checkbox'][data-type='Ribbons'][value='Global War on Terrorism Expeditionary']",
+      );
+      if (gwotBox) {
+        const label = gwotBox.parentElement;
+        if (label) {
+          const free = hasDeploymentBadgeSelected();
+          // Keep first text node after checkbox in sync
+          for (const node of label.childNodes) {
+            if (node.nodeType === Node.TEXT_NODE && node.textContent.includes("Global War on Terrorism Expeditionary")) {
+              node.textContent = free
+                ? `${GWOT_EXPEDITIONARY} (R$0 — free with deployment badge)`
+                : `${GWOT_EXPEDITIONARY} (R$${DEFAULT_PRICE})`;
+              break;
+            }
+          }
+        }
+      }
 
       if (limits?.rules) {
         ruleRef.textContent = limits.rules;
@@ -2487,6 +2850,20 @@ ${priceLine}
           label.classList.toggle("soft-disabled", soft);
         }
       });
+
+      document.querySelectorAll("input.qty-input[data-qty-item]").forEach((input) => {
+        const earned = awardIsEarned(input.dataset.qtyItem);
+        const hardLock = Boolean(earnedAwardKeys) && !earned;
+        const row = input.closest("label");
+        if (hardLock) {
+          input.value = "0";
+          input.disabled = true;
+          if (row) row.classList.add("locked-out");
+        } else {
+          input.disabled = false;
+          if (row) row.classList.remove("locked-out");
+        }
+      });
     }
 
     function rebuildEarnedDisplayMap(profile) {
@@ -2572,6 +2949,16 @@ ${priceLine}
             cjsSelect.disabled = false;
           }
         }
+      });
+
+      document.querySelectorAll("input.qty-input[data-qty-item]").forEach((input) => {
+        const itemName = input.dataset.qtyItem;
+        const match = profile?.awards?.find((a) => awardMatchesCatalogItem(a.name, itemName));
+        if (!match) return;
+        const fromName = parseSheetAwardCount(match.name);
+        const qty = Math.max(1, Math.min(QTY_BADGE_MAX, fromName));
+        input.value = String(qty);
+        input.disabled = false;
       });
     }
 
@@ -2705,6 +3092,16 @@ ${priceLine}
             populateCsibSelect(csibSelect);
             csibSelect.disabled = true;
           }
+          const cjsSelect = box.parentElement.querySelector(".cjs-count-select");
+          if (cjsSelect) {
+            cjsSelect.value = "0";
+            cjsSelect.disabled = true;
+          }
+        });
+        document.querySelectorAll("input.qty-input[data-qty-item]").forEach((input) => {
+          input.value = "0";
+          input.disabled = false;
+          input.closest("label")?.classList.remove("locked-out");
         });
         applyAwardLocks();
         updateCalculator();
