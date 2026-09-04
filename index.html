@@ -1455,23 +1455,23 @@
       },
       "Class C Short Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
-        maxForeign: 0, maxRibbons: null, idRequiresNoCsib: true,
-        rules: "SS no tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · RDI / unit citations free",
+        maxForeign: 0, maxRibbons: null, idCsibSharesSlot: true,
+        rules: "SS no tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 (max 1 with CSIB — same pocket) · RDI / unit citations free",
       },
       "Class C Short Sleeve (With Tie)": {
         maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
-        maxForeign: 0, maxRibbons: null, idRequiresNoCsib: true,
-        rules: "SS with tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · RDI / unit citations free",
+        maxForeign: 0, maxRibbons: null, idCsibSharesSlot: true,
+        rules: "SS with tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 (max 1 with CSIB — same pocket) · RDI / unit citations free",
       },
       "Class C Long Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
-        maxForeign: 0, maxRibbons: null, idRequiresNoCsib: true,
-        rules: "LS no tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · RDI / unit citations free",
+        maxForeign: 0, maxRibbons: null, idCsibSharesSlot: true,
+        rules: "LS no tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 (max 1 with CSIB — same pocket) · RDI / unit citations free",
       },
       "Class C Long Sleeve (With Tie)": {
         maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
-        maxForeign: 0, maxRibbons: null, idRequiresNoCsib: true,
-        rules: "LS with tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 only if no CSIB · RDI / unit citations free",
+        maxForeign: 0, maxRibbons: null, idCsibSharesSlot: true,
+        rules: "LS with tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 (max 1 with CSIB — same pocket) · RDI / unit citations free",
       },
       "ICVC — Tanker": {
         maxTabs: 0, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
@@ -2103,7 +2103,13 @@ const UNIT_TREE = [
           return;
         }
         if (key === "id") {
-          cntEl.textContent = limits.maxIdBadges != null ? `${checked} / ${limits.maxIdBadges}` : String(checked);
+          const hasCsib = Boolean(
+            document.querySelector(
+              "input[type='checkbox'][data-type='Badges'][value='Combat Service Identification Badge']:checked",
+            ),
+          );
+          const idMax = effectiveIdBadgeMax(limits, hasCsib);
+          cntEl.textContent = idMax != null ? `${checked} / ${idMax}` : String(checked);
           return;
         }
         if (key === "csib") {
@@ -2271,6 +2277,17 @@ const UNIT_TREE = [
       return { selected, total, discount, selectedUniform, lines };
     }
 
+
+    function effectiveIdBadgeMax(limits, hasCsib) {
+      if (limits?.maxIdBadges == null) return null;
+      // Class C: CSIB sits in an ID-badge pocket slot → one ID badge still allowed (e.g. MATCOM CSIB + MGIB).
+      if (limits.idCsibSharesSlot && hasCsib) {
+        return Math.max(0, limits.maxIdBadges - 1);
+      }
+      if (limits.idRequiresNoCsib && hasCsib) return 0;
+      return limits.maxIdBadges;
+    }
+
     function validateSelection(selected) {
       const issues = [];
       const key = uniformSelect.value;
@@ -2319,10 +2336,14 @@ const UNIT_TREE = [
         });
       }
       if (limits.maxIdBadges != null) {
-        const idMax = limits.idRequiresNoCsib && hasCsib ? 0 : limits.maxIdBadges;
+        const idMax = effectiveIdBadgeMax(limits, hasCsib);
         if (ids.length > idMax) {
-          if (limits.idRequiresNoCsib && hasCsib) {
-            issues.push("ID Badges are not allowed when CSIB is worn on Class C.");
+          if (limits.idCsibSharesSlot && hasCsib) {
+            issues.push(
+              `ID Badges: ${ids.length}/${idMax} with CSIB — CSIB uses one ID pocket slot (max 1 ID badge).`,
+            );
+          } else if (limits.idRequiresNoCsib && hasCsib) {
+            issues.push("ID Badges are not allowed when CSIB is worn on this uniform.");
           } else {
             issues.push(`ID Badges: ${ids.length}/${limits.maxIdBadges} — exceeds max.`);
           }
