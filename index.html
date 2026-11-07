@@ -695,6 +695,24 @@
       item("Watch (Tan)"),
     ];
 
+    /** Army Fleece colorways — pick one (included in base; no extra charge). */
+    const FLEECE_COLOR_ACCESSORIES = [
+      item("Fleece (Greenish-Brown)", 0),
+      item("Fleece (Darker Greenish-Brown)", 0),
+      item("Fleece (Mint)", 0),
+    ];
+
+    /** Rolled sleeves only — max 2 (one per arm); Tattoo 1–6. */
+    const TATTOO_ACCESSORIES = [
+      item("Tattoo 1"),
+      item("Tattoo 2"),
+      item("Tattoo 3"),
+      item("Tattoo 4"),
+      item("Tattoo 5"),
+      item("Tattoo 6"),
+    ];
+    const MAX_TATTOOS = 2;
+
     // Ribbon list aligned with the QMC Database.
     // Free defaults (auto with BMT): National Defense, GWOT Service, Army Service.
     const RIBBONS = [
@@ -938,6 +956,7 @@
         foreignBadges: FOREIGN_BADGES,
         accessories: [
           ...WATCH_ACCESSORIES,
+          ...TATTOO_ACCESSORIES,
         ],
       },
 
@@ -958,6 +977,7 @@
         foreignBadges: [],
         accessories: [
           ...WATCH_ACCESSORIES,
+          ...TATTOO_ACCESSORIES,
         ],
       },
 
@@ -978,6 +998,7 @@
         foreignBadges: [],
         accessories: [
           ...WATCH_ACCESSORIES,
+          ...TATTOO_ACCESSORIES,
         ],
       },
 
@@ -988,6 +1009,7 @@
         foreignRibbons: [],
         foreignBadges: [],
         accessories: [
+          ...FLEECE_COLOR_ACCESSORIES,
           RANKTAB,
           NAMETAPE,
         ],
@@ -1004,6 +1026,7 @@
         ...TIGER_STRIPES_SHARED,
         accessories: [
           ...WATCH_ACCESSORIES,
+          ...TATTOO_ACCESSORIES,
         ],
       },
 
@@ -1024,6 +1047,7 @@
         foreignBadges: [],
         accessories: [
           ...WATCH_ACCESSORIES,
+          ...TATTOO_ACCESSORIES,
         ],
       },
 
@@ -1222,19 +1246,55 @@
       "Master Combat Action Badge",
     ]);
 
-    /** Master combat badge blocks the matching Expert badge (EIB / EFMB / ESB). */
+    /**
+     * When Master is *selected*, block matching Expert (EIB / EFMB / ESB).
+     * Earning Master unlocks Expert as an alternate wear choice (unselect Master first).
+     */
     const MASTER_COMBAT_BLOCKS_EXPERT = {
       "Master Combat Infantryman Badge": "Expert Infantryman Badge",
       "Master Combat Medical Badge": "Expert Field Medical Badge",
       "Master Combat Action Badge": "Expert Soldier Badge",
     };
 
-    /** Holding Master combat badge also blocks the matching base CIB/CMB/CAB. */
+    /**
+     * When Master is *selected*, block matching base CIB/CMB/CAB.
+     * Earning Master unlocks base as an alternate wear choice (unselect Master first).
+     */
     const MASTER_BLOCKS_BASE_COMBAT = {
       "Master Combat Infantryman Badge": "Combat Infantryman Badge",
       "Master Combat Medical Badge": "Combat Medical Badge",
       "Master Combat Action Badge": "Combat Action Badge",
     };
+
+    /** Within each family, wear at most one of Master / base / Expert. */
+    const COMBAT_WEAR_CHOICE_SETS = [
+      ["Master Combat Infantryman Badge", "Combat Infantryman Badge", "Expert Infantryman Badge"],
+      ["Master Combat Medical Badge", "Combat Medical Badge", "Expert Field Medical Badge"],
+      ["Master Combat Action Badge", "Combat Action Badge", "Expert Soldier Badge"],
+    ];
+
+    function combatWearPeers(itemName) {
+      for (const set of COMBAT_WEAR_CHOICE_SETS) {
+        if (set.includes(itemName)) return set.filter((n) => n !== itemName);
+      }
+      return null;
+    }
+
+    function uncheckCombatWearPeers(itemName) {
+      const peers = combatWearPeers(itemName);
+      if (!peers) return;
+      for (const peer of peers) {
+        const box = document.querySelector(
+          `input[type='checkbox'][data-type='Badges'][value="${CSS.escape(peer)}"]`,
+        );
+        if (!box?.checked) continue;
+        box.checked = false;
+        const label = box.parentElement;
+        label?.querySelectorAll("select").forEach((sel) => {
+          sel.disabled = true;
+        });
+      }
+    }
 
     const UNIT_CITATION_NAMES = new Set(UNIT_CITATIONS.map((u) => u.name));
 
@@ -1390,27 +1450,28 @@
       },
       "Rolled OCP": {
         maxTabs: 2, maxSkillBadges: 5, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
-        maxForeign: 1, rules: "Same as OCP · Watch authorized (Brown, Black, or Tan) · Skill Badges max 5 (1 combined from Groups 1–3) · Group 5 prohibited",
+        maxForeign: 1, maxTattoos: MAX_TATTOOS,
+        rules: "Same as OCP · Watch authorized (Brown, Black, or Tan) · Tattoos max 2 (Tattoo 1–6, one per arm) · Skill Badges max 5 (1 combined from Groups 1–3) · Group 5 prohibited",
       },
       "Army Combat Shirt (ACS)": {
         maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
         rules: "Skill Tabs max 2 · CSIB authorized · No skill badges, ID badges, or ribbons",
       },
       "Rolled ACS": {
-        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
-        rules: "Skill Tabs max 2 · CSIB · Watch if rolled (Brown, Black, or Tan) · No skill badges or ribbons",
+        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0, maxTattoos: MAX_TATTOOS,
+        rules: "Skill Tabs max 2 · CSIB · Watch if rolled (Brown, Black, or Tan) · Tattoos max 2 (Tattoo 1–6, one per arm) · No skill badges or ribbons",
       },
       "ASOC Blackouts": {
         maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
         rules: "Skill Tabs max 2 · CSIB authorized · No watch, ribbons, skill badges, or ID badges",
       },
       "Rolled ASOC Blackouts": {
-        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
-        rules: "Skill Tabs max 2 · CSIB · Watch if rolled (Brown, Black, or Tan) · No skill badges or ribbons",
+        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0, maxTattoos: MAX_TATTOOS,
+        rules: "Skill Tabs max 2 · CSIB · Watch if rolled (Brown, Black, or Tan) · Tattoos max 2 (Tattoo 1–6, one per arm) · No skill badges or ribbons",
       },
       "Army Fleece (Winter)": {
         maxTabs: 0, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
-        rules: "Ranktab & Nametape only",
+        rules: "Pick one fleece color (Greenish-Brown, Darker Greenish-Brown, or Mint) · Ranktab & Nametape free",
       },
       "ASF Tiger Stripes": {
         maxTabs: 2, maxSkillBadges: 2, comboGroups: null, maxIdBadges: 0, maxForeign: 0,
@@ -1418,8 +1479,8 @@
         enforceSkillTabSplit: true,
       },
       "Rolled ASF Tiger Stripes": {
-        maxTabs: 2, maxSkillBadges: 2, comboGroups: null, maxIdBadges: 0, maxForeign: 0,
-        rules: "Skill Tabs max 2 · Skill Badges max 2 (not 4 badges) · Watch authorized (Brown, Black, or Tan)",
+        maxTabs: 2, maxSkillBadges: 2, comboGroups: null, maxIdBadges: 0, maxForeign: 0, maxTattoos: MAX_TATTOOS,
+        rules: "Skill Tabs max 2 · Skill Badges max 2 (not 4 badges) · Watch authorized (Brown, Black, or Tan) · Tattoos max 2 (Tattoo 1–6, one per arm)",
         enforceSkillTabSplit: true,
       },
       "Tiger Stripe ACS": {
@@ -1427,8 +1488,8 @@
         rules: "Skill Tabs max 2 · CSIB authorized · No skill badges, ID badges, or ribbons",
       },
       "Rolled Tiger Stripe ACS": {
-        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
-        rules: "Skill Tabs max 2 · CSIB · Watch if rolled (Brown, Black, or Tan) · No skill badges or ribbons",
+        maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0, maxTattoos: MAX_TATTOOS,
+        rules: "Skill Tabs max 2 · CSIB · Watch if rolled (Brown, Black, or Tan) · Tattoos max 2 (Tattoo 1–6, one per arm) · No skill badges or ribbons",
       },
       "AGSU (Class A)": {
         maxTabs: 2, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
@@ -1940,9 +2001,13 @@ const UNIT_TREE = [
         checkbox.dataset.price = itemPrice;
         const watchMatch = /^Watch \((Brown|Black|Tan)\)$/.exec(itemName);
         if (watchMatch) checkbox.dataset.watchColor = watchMatch[1];
+        const fleeceMatch = /^Fleece \((.+)\)$/.exec(itemName);
+        if (fleeceMatch) checkbox.dataset.fleeceColor = fleeceMatch[1];
+        if (combatWearPeers(itemName)) checkbox.dataset.combatWear = "1";
 
         label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(`${itemName} (R$${itemPrice})`));
+        const priceLabel = itemPrice === 0 ? `${itemName} (free)` : `${itemName} (R$${itemPrice})`;
+        label.appendChild(document.createTextNode(priceLabel));
 
         if (tiers) {
           const select = document.createElement("select");
@@ -1995,7 +2060,8 @@ const UNIT_TREE = [
           }
           checkbox.addEventListener("change", () => {
             select.disabled = !checkbox.checked;
-            if (itemName.startsWith("Master Combat")) applyAwardLocks();
+            if (checkbox.checked) uncheckCombatWearPeers(itemName);
+            applyAwardLocks();
             updateCalculator();
           });
           select.addEventListener("change", updateCalculator);
@@ -2017,6 +2083,15 @@ const UNIT_TREE = [
               container.querySelectorAll("input[data-watch-color]").forEach((other) => {
                 if (other !== checkbox) other.checked = false;
               });
+            }
+            if (checkbox.dataset.fleeceColor && checkbox.checked) {
+              container.querySelectorAll("input[data-fleece-color]").forEach((other) => {
+                if (other !== checkbox) other.checked = false;
+              });
+            }
+            if (checkbox.dataset.combatWear && checkbox.checked) {
+              uncheckCombatWearPeers(itemName);
+              applyAwardLocks();
             }
             updateCalculator();
           });
@@ -2391,6 +2466,20 @@ const UNIT_TREE = [
         issues.push(`Select only one watch color (${watches.join(", ")}).`);
       }
 
+      const fleeceColors = selected.Accessories.filter((n) => /^Fleece \(/i.test(n));
+      if (fleeceColors.length > 1) {
+        issues.push(`Select only one fleece color (${fleeceColors.join(", ")}).`);
+      }
+      if (key === "Army Fleece (Winter)" && fleeceColors.length === 0) {
+        issues.push("Select a fleece color (Greenish-Brown, Darker Greenish-Brown, or Mint).");
+      }
+
+      const tattoos = selected.Accessories.filter((n) => /^Tattoo \d+$/i.test(n));
+      const tattooMax = limits.maxTattoos != null ? limits.maxTattoos : MAX_TATTOOS;
+      if (tattoos.length > tattooMax) {
+        issues.push(`Tattoos: ${tattoos.length}/${tattooMax} — max ${tattooMax} (one per arm).`);
+      }
+
       const offsetNames = ["Ribbon Offset", "Badge Offset", "RDI Offset"];
       const offsets = selected.Accessories.filter((n) => offsetNames.includes(n));
       if (offsets.length > 2) {
@@ -2404,16 +2493,11 @@ const UNIT_TREE = [
         }
       });
 
-      // Dual Master+base combat when both checked:
-      for (const [master, base] of Object.entries(MASTER_BLOCKS_BASE_COMBAT)) {
-        if (badges.includes(master) && badges.includes(base)) {
-          issues.push(`Cannot wear both ${master} and ${base}.`);
-        }
-      }
-      // Master combat blocks matching Expert badges (EIB / EFMB / ESB)
-      for (const [master, expert] of Object.entries(MASTER_COMBAT_BLOCKS_EXPERT)) {
-        if (badges.includes(master) && badges.includes(expert)) {
-          issues.push(`Cannot wear both ${master} and ${expert}.`);
+      // Master / base / Expert: choose one wear option per combat family
+      for (const set of COMBAT_WEAR_CHOICE_SETS) {
+        const hits = set.filter((n) => badges.includes(n));
+        if (hits.length > 1) {
+          issues.push(`Choose one of ${set.join(" / ")} (selected: ${hits.join(", ")}).`);
         }
       }
 
@@ -2661,7 +2745,7 @@ ${priceLine}
         return true;
       }
 
-      // CAB/CMB/CIB Master vs base must match exactly (sheet MC → Master … Badge)
+      // CAB/CMB/CIB: Master earners may wear Master, base, or matching Expert (choose one).
       const combatBase = key.replace(/^master /, "");
       if (
         combatBase === "combat action badge" ||
@@ -2673,21 +2757,31 @@ ${priceLine}
           const earnedCore = earned.replace(/\s+\d+(st|nd|rd|th) award$/i, "").trim();
           const earnedBase = earnedCore.replace(/^master /, "");
           if (earnedBase !== combatBase) continue;
-          if (earnedCore.startsWith("master ") === wantMaster) return true;
+          const earnedIsMaster = earnedCore.startsWith("master ");
+          if (wantMaster) {
+            if (earnedIsMaster) return true;
+          } else if (earnedIsMaster || earnedCore === combatBase) {
+            // Base unlocked by base or Master on sheet
+            return true;
+          }
         }
         return false;
       }
-      return false;
-    }
 
-    function hasMasterCombatSelectedOrEarned(masterName) {
-      const masterKey = normalizeAwardKey(masterName);
-      if (earnedAwardKeys) {
+      // EIB / EFMB / ESB unlocked when the matching Master combat badge is earned
+      for (const [masterName, expertName] of Object.entries(MASTER_COMBAT_BLOCKS_EXPERT)) {
+        if (normalizeAwardKey(expertName) !== key) continue;
+        const masterKey = normalizeAwardKey(masterName);
         for (const earned of earnedAwardKeys) {
           const core = earned.replace(/\s+\d+(st|nd|rd|th) award$/i, "").trim();
           if (core === masterKey) return true;
         }
       }
+      return false;
+    }
+
+    /** True only when the Master combat badge checkbox is currently selected (not merely earned). */
+    function hasMasterCombatSelected(masterName) {
       const box = document.querySelector(
         `input[type='checkbox'][data-type='Badges'][value="${CSS.escape(masterName)}"]`,
       );
@@ -2699,7 +2793,7 @@ ${priceLine}
         (m) => MASTER_COMBAT_BLOCKS_EXPERT[m] === expertName,
       );
       if (!master) return false;
-      return hasMasterCombatSelectedOrEarned(master);
+      return hasMasterCombatSelected(master);
     }
 
     function hasMasterThatBlocksBase(baseName) {
@@ -2707,7 +2801,7 @@ ${priceLine}
         (m) => MASTER_BLOCKS_BASE_COMBAT[m] === baseName,
       );
       if (!master) return false;
-      return hasMasterCombatSelectedOrEarned(master);
+      return hasMasterCombatSelected(master);
     }
 
     function isOfficerPaygrade(pg) {
