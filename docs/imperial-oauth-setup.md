@@ -5,7 +5,7 @@ Standalone auth for this calculator. **Not** the FORSCOM website OAuth app.
 Install path on Imperial: `~/stacks/qmc-calc` (user systemd unit `qmc-calc.service`).
 
 **Public (GitHub Pages login):** https://qmc-api.imperialnode.net — see [cloudflare-tunnel-oauth.md](./cloudflare-tunnel-oauth.md)  
-**LAN:** https://qmc.isd
+**LAN:** https://qmc.isd via Nginx Proxy Manager → `http://10.0.1.150:4182` (not LAN Caddy)
 
 ## 1. Create a new Roblox OAuth app
 
