@@ -702,7 +702,7 @@
       item("Fleece (Mint)", 0),
     ];
 
-    /** Rolled sleeves only — max 2 (one per arm); Tattoo 1–6. */
+    /** Rolled + short-sleeve uniforms — max 2 (one per arm); Tattoo 1–6. */
     const TATTOO_ACCESSORIES = [
       item("Tattoo 1"),
       item("Tattoo 2"),
@@ -1073,6 +1073,7 @@
         ...CLASS_B_SHARED,
         accessories: [
           ...WATCH_ACCESSORIES,
+          ...TATTOO_ACCESSORIES,
           FREE_RDI,
         ],
       },
@@ -1082,6 +1083,7 @@
         ...CLASS_B_SHARED,
         accessories: [
           ...WATCH_ACCESSORIES,
+          ...TATTOO_ACCESSORIES,
           FREE_RDI,
         ],
       },
@@ -1117,11 +1119,19 @@
       "Class C Short Sleeve (No Tie)": {
         basePrice: BASE_UNIFORM_PRICE,
         ...CLASS_C_SHARED,
+        accessories: [
+          ...CLASS_C_ACCESSORIES,
+          ...TATTOO_ACCESSORIES,
+        ],
       },
 
       "Class C Short Sleeve (With Tie)": {
         basePrice: BASE_UNIFORM_PRICE,
         ...CLASS_C_SHARED,
+        accessories: [
+          ...CLASS_C_ACCESSORIES,
+          ...TATTOO_ACCESSORIES,
+        ],
       },
 
       "Class C Long Sleeve (No Tie)": {
@@ -1498,13 +1508,13 @@
       },
       "Class B Short Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
-        maxForeign: 0, maxRibbons: 6,
-        rules: "SS no tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized (Brown, Black, or Tan) · RDI free",
+        maxForeign: 0, maxRibbons: 6, maxTattoos: MAX_TATTOOS,
+        rules: "SS no tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized (Brown, Black, or Tan) · Tattoos max 2 (Tattoo 1–6, one per arm) · RDI free",
       },
       "Class B Short Sleeve (With Tie)": {
         maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
-        maxForeign: 0, maxRibbons: 6,
-        rules: "SS with tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized (Brown, Black, or Tan) · RDI free",
+        maxForeign: 0, maxRibbons: 6, maxTattoos: MAX_TATTOOS,
+        rules: "SS with tie · Ribbons max 6 · 1 Skill Badge OR Skill Tab (metal) · Watch authorized (Brown, Black, or Tan) · Tattoos max 2 (Tattoo 1–6, one per arm) · RDI free",
       },
       "Class B Long Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 1, comboSkill: true, maxIdBadges: 0,
@@ -1522,13 +1532,13 @@
       },
       "Class C Short Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
-        maxForeign: 0, maxRibbons: null, idCsibSharesSlot: true,
-        rules: "SS no tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 (max 1 with CSIB — same pocket) · RDI / unit citations free",
+        maxForeign: 0, maxRibbons: null, idCsibSharesSlot: true, maxTattoos: MAX_TATTOOS,
+        rules: "SS no tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 (max 1 with CSIB — same pocket) · Tattoos max 2 (Tattoo 1–6, one per arm) · RDI / unit citations free",
       },
       "Class C Short Sleeve (With Tie)": {
         maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
-        maxForeign: 0, maxRibbons: null, idCsibSharesSlot: true,
-        rules: "SS with tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 (max 1 with CSIB — same pocket) · RDI / unit citations free",
+        maxForeign: 0, maxRibbons: null, idCsibSharesSlot: true, maxTattoos: MAX_TATTOOS,
+        rules: "SS with tie · Metal Skill Tab max 1 · Skill Badges max 4 (1 from Groups 1–3) · ID Badges max 2 (max 1 with CSIB — same pocket) · Tattoos max 2 (Tattoo 1–6, one per arm) · RDI / unit citations free",
       },
       "Class C Long Sleeve (No Tie)": {
         maxTabs: 1, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
