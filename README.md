@@ -8,7 +8,7 @@ Community-maintained fork of the [original calculator](https://github.com/ProEJ7
 
 Calculate uniform order prices and generate copyable ordering templates for QMC.
 
-Item lists follow the [QMC Uniform Guide](https://docs.google.com/document/d/1fc9gU7zDWnZu_3xoFPyP9NUH3D0jb9kDJG7SaAFitOM/edit), [Awards & Decorations](https://docs.google.com/document/d/1iTcTwtrTwjLhMUDras1Tq0NrxOIfmS4MADYSxnxG1Gg/edit), [Badge Information Trello](https://trello.com/b/o1GnoMon/quartermaster-corps-badge-information), and [QMC Database](https://docs.google.com/spreadsheets/d/1e_AqHIGrGdfNSgoHt6kLV89E6LADJmlZzhfRAUXo0wY/edit). Custom PT, Mess Dress, and Greenouts (SRT) are excluded. Rolled uniforms allow up to two arm tattoos (Tattoo 1–6).
+Item lists follow the [QMC Uniform Guide](https://docs.google.com/document/d/1fc9gU7zDWnZu_3xoFPyP9NUH3D0jb9kDJG7SaAFitOM/edit), [Awards & Decorations](https://docs.google.com/document/d/1iTcTwtrTwjLhMUDras1Tq0NrxOIfmS4MADYSxnxG1Gg/edit), [Badge Information Trello](https://trello.com/b/o1GnoMon/quartermaster-corps-badge-information), and [QMC Database](https://docs.google.com/spreadsheets/d/1e_AqHIGrGdfNSgoHt6kLV89E6LADJmlZzhfRAUXo0wY/edit). Custom PT, Mess Dress, and Greenouts (SRT) are excluded. Rolled and short-sleeve uniforms allow up to two arm tattoos (Tattoo 1–6).
 
 ## Roblox login (Imperial)
 
