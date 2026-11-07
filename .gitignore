@@ -1,6 +1,9 @@
 node_modules/
-server/node_modules/
-server/.env
-server/data/
 *.log
 .DS_Store
+
+# Not required for GitHub Pages (static UI)
+.cursor/agents/
+server/
+scripts/
+docs/

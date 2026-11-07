@@ -3,7 +3,8 @@
 Community-maintained fork of the [original calculator](https://github.com/ProEJ78/uniform-price-calculator) by ProEJ78.
 
 **GitHub Pages (static):** https://codythebeast89.github.io/uniform-price-calculator/  
-**Public API (Cloudflare → Imperial):** https://qmc-api.imperialnode.net
+**Public API:** https://qmc-api.imperialnode.net  
+**LAN:** https://qmc.isd
 
 Calculate uniform order prices and generate copyable ordering templates for QMC.
 
