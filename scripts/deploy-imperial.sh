@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Deploy QMC calculator + auth API to Imperial.
 # Public API: Cloudflare DNS qmc-api.imperialnode.net → caddy-joinqmc → :4182
+# LAN:       https://qmc.isd via Nginx Proxy Manager (isd-homelab-stacks/stacks/npm/hosts.yaml)
+#            → http://10.0.1.150:4182 — do NOT add qmc.isd to LAN Caddy (Funnel-only after 2026-09-05).
 # Optional: Cloudflare Tunnel stack under ~/stacks/qmc-calc-tunnel (needs TUNNEL_TOKEN).
 # Standalone — does NOT touch forscom-website / forscom-auth.
 set -euo pipefail
@@ -87,16 +89,23 @@ systemctl --user daemon-reload
 systemctl --user enable --now qmc-calc.service
 systemctl --user restart qmc-calc.service
 
-# LAN Caddy (qmc.isd)
-CADDY="/home/codyb/stacks/caddy/Caddyfile"
-if [ -f "$CADDY" ] && ! grep -q '^qmc\.isd' "$CADDY"; then
-  {
-    echo ""
-    echo "# QMC Uniform Price Calculator"
-    cat "$REMOTE_DIR/deploy/caddy-qmc.isd.conf"
-  } >> "$CADDY"
-  docker exec caddy-proxy caddy reload --config /etc/caddy/Caddyfile || true
-  echo "Appended qmc.isd to LAN Caddyfile"
+# LAN HTTPS for qmc.isd is owned by Nginx Proxy Manager (not LAN Caddy).
+# Source of truth: isd-homelab-stacks/stacks/npm/hosts.yaml → 10.0.1.150:4182
+NPM_HOSTS="/home/codyb/stacks/npm/hosts.yaml"
+if [ -f "$NPM_HOSTS" ] && grep -q 'qmc\.isd' "$NPM_HOSTS"; then
+  if curl -skf --connect-timeout 5 https://qmc.isd/health >/dev/null; then
+    echo "LAN qmc.isd via NPM: health OK"
+  else
+    echo "WARNING: qmc.isd listed in NPM hosts.yaml but https://qmc.isd/health failed" >&2
+    echo "  Check NPM proxy host → http://10.0.1.150:4182 and ISD Homelab Root CA trust" >&2
+  fi
+else
+  echo "WARNING: qmc.isd not found in $NPM_HOSTS — LAN hostname may be missing from NPM" >&2
+fi
+# Stale LAN Caddy site block (pre-NPM cutover) — warn only; Caddy is Funnel-only now.
+LAN_CADDY="/home/codyb/stacks/caddy/Caddyfile"
+if [ -f "$LAN_CADDY" ] && grep -qE '^qmc\.isd[[:space:]]*\{' "$LAN_CADDY"; then
+  echo "WARNING: stale qmc.isd site still in $LAN_CADDY — remove it; NPM owns LAN *.isd" >&2
 fi
 
 # Public Caddy (Cloudflare DNS → Imperial WAN)

@@ -698,6 +698,7 @@
     // Ribbon list aligned with the QMC Database.
     // Free defaults (auto with BMT): National Defense, GWOT Service, Army Service.
     const RIBBONS = [
+      item("Medal of Honor"),
       item("Army Distinguished Service Cross"),
       item("Defense Distinguished Service"),
       item("Army Distinguished Service"),
@@ -707,6 +708,7 @@
       item("Distinguished Flying Cross"),
       item("Soldier's Medal"),
       item("Bronze Star"),
+      item("Purple Heart"),
       item("Defense Meritorious Service"),
       item("Meritorious Service"),
       item("Air Medal"),
@@ -734,8 +736,10 @@
       item("Afghanistan Campaign"),
       item("Iraq Campaign"),
       item("Joint Special Operations Campaign"),
+      item("Korean War Service Medal"),
       item("Global War on Terrorism Expeditionary"),
       item("Armed Forces Service Medal"),
+      item("Humanitarian Service Ribbon"),
       item("Army Sea Duty"),
       item("Army Overseas Service"),
       item("NATO Non-Article 5"),
@@ -755,6 +759,7 @@
       item("Marine Combat Aircrew Badge"),
       item("Republic of Korea Jump Wings"),
       item("Royal Air Force Parachute Wings"),
+      item("British Skill at Arms Badge"),
       item("Special Air Service Parachute Wings"),
       item("Royal Air Force Aviator Wings"),
       item("Armed Forces of the Philippines Airborne Badge"),
@@ -797,6 +802,7 @@
       item("Sapper Tab"),
       item("Jungle Tab"),
       item("Arctic Tab"),
+      item("Assault Tab"),
     ];
 
     const ALL_SKILL_TABS = [
@@ -1349,7 +1355,7 @@
     ];
 
     const TAB_NAMES = new Set([
-      "Ranger Tab", "Special Forces Tab", "Sapper Tab", "Jungle Tab", "Arctic Tab", "President's Hundred Tab",
+      "Ranger Tab", "Special Forces Tab", "Sapper Tab", "Jungle Tab", "Arctic Tab", "Assault Tab", "President's Hundred Tab",
     ]);
 
     const ID_BADGE_NAMES = new Set([
@@ -1379,12 +1385,12 @@
     // Per-uniform wear limits (from Uniform Guide / QMC console rules).
     const UNIFORM_LIMITS = {
       "OCP (Standard)": {
-        maxTabs: 2, maxSkillBadges: 4, comboGroups: [[1, 2], [3]], maxIdBadges: 2,
-        maxForeign: 1, rules: "Skill Tabs max 2 · Skill Badges max 4 (1 from Groups 1–2, 1 from Group 3) · ID Badges max 2 · 1 Foreign Award · Group 5 prohibited",
+        maxTabs: 2, maxSkillBadges: 5, comboGroups: [[1, 2], [3]], maxIdBadges: 2,
+        maxForeign: 1, rules: "Skill Tabs max 2 · Skill Badges max 5 (1 from Groups 1–2, 1 from Group 3) · ID Badges max 2 · 1 Foreign Award · Group 5 prohibited",
       },
       "Rolled OCP": {
-        maxTabs: 2, maxSkillBadges: 4, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
-        maxForeign: 1, rules: "Same as OCP · Watch authorized (Brown, Black, or Tan) · Skill Badges max 4 (1 combined from Groups 1–3) · Group 5 prohibited",
+        maxTabs: 2, maxSkillBadges: 5, comboGroups: [[1, 2, 3]], maxIdBadges: 2,
+        maxForeign: 1, rules: "Same as OCP · Watch authorized (Brown, Black, or Tan) · Skill Badges max 5 (1 combined from Groups 1–3) · Group 5 prohibited",
       },
       "Army Combat Shirt (ACS)": {
         maxTabs: 2, maxSkillBadges: 0, maxIdBadges: 0, maxForeign: 0,
